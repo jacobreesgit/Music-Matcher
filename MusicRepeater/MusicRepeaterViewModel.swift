@@ -14,9 +14,13 @@ class MusicRepeaterViewModel: ObservableObject {
     @Published var currentIteration: Int = 0
     @Published var totalIterations: Int = 0
     @Published var alertMessage: String = ""
+    @Published var isPlaying: Bool = false
+    @Published var showingProcessingView: Bool = false
     
     private let playerManager = MusicPlayerManager()
     private var cancellables = Set<AnyCancellable>()
+    private var targetPlayCount: Int = 0
+    private var isMatchingMode: Bool = false
     
     var canMatchPlayCount: Bool {
         return singleTrack != nil && albumTrack != nil && !isProcessing
@@ -46,7 +50,17 @@ class MusicRepeaterViewModel: ObservableObject {
             .assign(to: &$currentIteration)
         
         playerManager.$isProcessing
-            .assign(to: &$isProcessing)
+            .sink { [weak self] processing in
+                self?.isProcessing = processing
+                if !processing {
+                    self?.showingProcessingView = false
+                    self?.isPlaying = false
+                }
+            }
+            .store(in: &cancellables)
+        
+        playerManager.$isPlaying
+            .assign(to: &$isPlaying)
         
         // Listen for completion
         playerManager.$completionMessage
@@ -77,6 +91,10 @@ class MusicRepeaterViewModel: ObservableObject {
         albumPlayCount = item.playCount
     }
     
+    func getTargetPlayCount() -> Int {
+        return targetPlayCount
+    }
+    
     func startMatching() {
         guard let singleTrack = singleTrack,
               let albumTrack = albumTrack else {
@@ -99,8 +117,11 @@ class MusicRepeaterViewModel: ObservableObject {
             return
         }
         
+        isMatchingMode = true
         totalIterations = timesToPlay
+        targetPlayCount = singlePlays
         currentIteration = 0
+        showingProcessingView = true
         
         // Start the fast-forwarded playback process
         playerManager.startFastForwardPlayback(
@@ -133,8 +154,11 @@ class MusicRepeaterViewModel: ObservableObject {
             return
         }
         
+        isMatchingMode = false
         totalIterations = timesToPlay
+        targetPlayCount = targetTotalPlays
         currentIteration = 0
+        showingProcessingView = true
         
         // Start the fast-forwarded playback process
         playerManager.startFastForwardPlayback(
@@ -142,6 +166,15 @@ class MusicRepeaterViewModel: ObservableObject {
             times: timesToPlay,
             targetTotalPlays: targetTotalPlays
         )
+    }
+    
+    func togglePlayback() {
+        playerManager.togglePlayback()
+    }
+    
+    func stopProcessing() {
+        playerManager.stopProcessing()
+        showingProcessingView = false
     }
     
     private func updateAlbumPlayCount() {

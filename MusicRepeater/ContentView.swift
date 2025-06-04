@@ -69,8 +69,6 @@ struct ContentView: View {
                             .padding(.leading, 5)
                     }
                 }
-                
-
             }
             .padding(.horizontal)
             
@@ -89,22 +87,6 @@ struct ContentView: View {
                 .background(Color.orange.opacity(0.1))
                 .cornerRadius(10)
                 .padding(.horizontal)
-            }
-            
-            // Progress Section
-            if viewModel.isProcessing {
-                VStack(spacing: 10) {
-                    Text("Processing...")
-                        .font(.headline)
-                    
-                    Text("Played \(viewModel.currentIteration) of \(viewModel.totalIterations)")
-                        .font(.subheadline)
-                    
-                    ProgressView(value: Double(viewModel.currentIteration), total: Double(viewModel.totalIterations))
-                        .progressViewStyle(LinearProgressViewStyle())
-                        .padding(.horizontal)
-                }
-                .padding()
             }
             
             Spacer()
@@ -169,6 +151,9 @@ struct ContentView: View {
             MediaPickerView(onSelection: { item in
                 viewModel.selectAlbumTrack(item)
             })
+        }
+        .fullScreenCover(isPresented: $viewModel.showingProcessingView) {
+            ProcessingView(viewModel: viewModel)
         }
         .alert("Music Repeater", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
