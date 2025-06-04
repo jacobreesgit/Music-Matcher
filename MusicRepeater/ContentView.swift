@@ -7,8 +7,38 @@ struct ContentView: View {
     @State private var showingAlbumPicker = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
+    @State private var hasCheckedPermission = false
     
     var body: some View {
+        Group {
+            if musicLibraryPermission == .authorized {
+                authorizedView
+            } else {
+                permissionRequestView
+            }
+        }
+        .onAppear {
+            if !hasCheckedPermission {
+                checkMusicLibraryPermission()
+                hasCheckedPermission = true
+            }
+        }
+        .onReceive(viewModel.$alertMessage) { message in
+            if !message.isEmpty {
+                alertMessage = message
+                showingAlert = true
+                viewModel.alertMessage = ""
+            }
+        }
+        .alert("Music Repeater", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
+        }
+    }
+    
+    private var authorizedView: some View {
         VStack(spacing: 20) {
             Text("Music Repeater")
                 .font(.largeTitle)
@@ -155,21 +185,92 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $viewModel.showingProcessingView) {
             ProcessingView(viewModel: viewModel)
         }
-        .alert("Music Repeater", isPresented: $showingAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(alertMessage)
-        }
-        .onAppear {
-            requestMusicLibraryAccess()
-        }
-        .onReceive(viewModel.$alertMessage) { message in
-            if !message.isEmpty {
-                alertMessage = message
-                showingAlert = true
-                viewModel.alertMessage = ""
+    }
+    
+    private var permissionRequestView: some View {
+        VStack(spacing: 30) {
+            Spacer()
+            
+            // Icon
+            Image(systemName: "music.note.house")
+                .font(.system(size: 80))
+                .foregroundColor(.blue)
+            
+            // Title and Description
+            VStack(spacing: 15) {
+                Text("Music Library Access")
+                    .font(.title)
+                    .fontWeight(.bold)
+                
+                Text("Music Repeater needs access to your music library to synchronize play counts between different versions of songs.")
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 30)
             }
+            
+            // Permission button
+            if musicLibraryPermission == .denied {
+                Button(action: {
+                    // Open Settings since permission was denied
+                    if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(settingsUrl)
+                    }
+                }) {
+                    Text("Open Settings")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(15)
+                }
+                .padding(.horizontal, 40)
+            } else if musicLibraryPermission == .notDetermined {
+                Button(action: {
+                    requestMusicLibraryAccess()
+                }) {
+                    Text("Grant Music Access")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(15)
+                }
+                .padding(.horizontal, 40)
+            }
+            
+            // Status text
+            Group {
+                if musicLibraryPermission == .denied {
+                    VStack(spacing: 10) {
+                        Text("Access Denied")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.red)
+                        
+                        Text("To use Music Repeater, please enable Music access in Settings → Privacy & Security → Media & Apple Music → Music Repeater")
+                            .font(.caption)
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 20)
+                    }
+                } else if musicLibraryPermission == .restricted {
+                    Text("Music access is restricted on this device")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                }
+            }
+            
+            Spacer()
         }
+    }
+    
+    private func checkMusicLibraryPermission() {
+        musicLibraryPermission = MPMediaLibrary.authorizationStatus()
     }
     
     private func matchPlayCount() {
@@ -219,9 +320,9 @@ struct ContentView: View {
     private func requestMusicLibraryAccess() {
         MPMediaLibrary.requestAuthorization { status in
             DispatchQueue.main.async {
+                musicLibraryPermission = status
                 if status != .authorized {
-                    alertMessage = "Permission to access the Music library was denied. Please enable Music access in Settings and try again."
-                    showingAlert = true
+                    // Don't show additional alert since the UI already shows the status
                 }
             }
         }

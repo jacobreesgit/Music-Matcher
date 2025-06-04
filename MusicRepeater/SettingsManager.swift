@@ -19,7 +19,7 @@ class SettingsManager: ObservableObject {
     }
     
     private init() {
-        // Load saved settings or use defaults
-        self.useSystemMusicPlayer = userDefaults.object(forKey: Keys.useSystemMusicPlayer) as? Bool ?? false
+        // Load saved settings or use defaults (changed default to true)
+        self.useSystemMusicPlayer = userDefaults.object(forKey: Keys.useSystemMusicPlayer) as? Bool ?? true
     }
 }

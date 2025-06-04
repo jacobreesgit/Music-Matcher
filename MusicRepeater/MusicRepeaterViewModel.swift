@@ -175,6 +175,16 @@ class MusicRepeaterViewModel: ObservableObject {
     func stopProcessing() {
         playerManager.stopProcessing()
         showingProcessingView = false
+        
+        // Update the album play count to reflect the actual iterations completed
+        updateAlbumPlayCount()
+        
+        // Set a message to inform the user
+        if currentIteration > 0 {
+            alertMessage = "Processing stopped. \(currentIteration) plays were added to the album version."
+        } else {
+            alertMessage = "Processing stopped. No plays were added."
+        }
     }
     
     private func updateAlbumPlayCount() {
@@ -182,7 +192,8 @@ class MusicRepeaterViewModel: ObservableObject {
         if let albumTrack = albumTrack {
             // Note: In a real scenario, you might need to re-query the media item
             // to get the updated play count, as the MPMediaItem might be cached
-            albumPlayCount = albumTrack.playCount + totalIterations
+            // Use currentIteration instead of totalIterations to reflect actual plays completed
+            albumPlayCount = albumTrack.playCount + currentIteration
         }
     }
 }
