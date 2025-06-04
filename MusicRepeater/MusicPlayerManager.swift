@@ -15,8 +15,9 @@ class MusicPlayerManager: ObservableObject {
     private var nowPlayingObserver: Any?
     
     init() {
-        // Use applicationMusicPlayer to avoid interfering with system music
-        self.musicPlayer = MPMusicPlayerController.applicationMusicPlayer
+        // Use systemMusicPlayer to take over the system's now playing
+        // This will replace whatever is currently playing from Apple Music
+        self.musicPlayer = MPMusicPlayerController.systemMusicPlayer
     }
     
     deinit {

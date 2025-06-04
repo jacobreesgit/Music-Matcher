@@ -22,6 +22,20 @@ class MusicRepeaterViewModel: ObservableObject {
         return singleTrack != nil && albumTrack != nil && !isProcessing
     }
     
+    var isSameSong: Bool {
+        guard let singleTrack = singleTrack,
+              let albumTrack = albumTrack else {
+            return false
+        }
+        
+        // Check if it's the same song by comparing persistent ID
+        return singleTrack.persistentID == albumTrack.persistentID
+    }
+    
+    var canPerformActions: Bool {
+        return canMatchPlayCount && !isSameSong
+    }
+    
     init() {
         setupBindings()
     }
@@ -69,14 +83,19 @@ class MusicRepeaterViewModel: ObservableObject {
             return
         }
         
+        if isSameSong {
+            alertMessage = "You've selected the same song for both versions. Please choose different versions of the song."
+            return
+        }
+        
         let singlePlays = singleTrack.playCount
         let albumPlays = albumTrack.playCount
         
-        // Calculate how many times we need to play
+        // Calculate how many times we need to play to match
         let timesToPlay = max(singlePlays - albumPlays, 0)
         
         if timesToPlay == 0 {
-            alertMessage = "The album version already has as many (or more) plays than the single version. No additional fast-forwarded plays are needed."
+            alertMessage = "The album version already has as many (or more) plays than the single version. No additional plays are needed."
             return
         }
         
@@ -88,6 +107,40 @@ class MusicRepeaterViewModel: ObservableObject {
             track: albumTrack,
             times: timesToPlay,
             targetTotalPlays: singlePlays
+        )
+    }
+    
+    func startAdding() {
+        guard let singleTrack = singleTrack,
+              let albumTrack = albumTrack else {
+            return
+        }
+        
+        if isSameSong {
+            alertMessage = "You've selected the same song for both versions. Please choose different versions of the song."
+            return
+        }
+        
+        let singlePlays = singleTrack.playCount
+        let albumPlays = albumTrack.playCount
+        
+        // Add the single play count to the album play count
+        let timesToPlay = singlePlays
+        let targetTotalPlays = albumPlays + singlePlays
+        
+        if timesToPlay == 0 {
+            alertMessage = "The single version has 0 plays, so no additional plays will be added."
+            return
+        }
+        
+        totalIterations = timesToPlay
+        currentIteration = 0
+        
+        // Start the fast-forwarded playback process
+        playerManager.startFastForwardPlayback(
+            track: albumTrack,
+            times: timesToPlay,
+            targetTotalPlays: targetTotalPlays
         )
     }
     

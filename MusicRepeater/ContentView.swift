@@ -69,8 +69,27 @@ struct ContentView: View {
                             .padding(.leading, 5)
                     }
                 }
+                
+
             }
             .padding(.horizontal)
+            
+            // Same Song Warning - Full Width
+            if viewModel.isSameSong {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    Text("Warning: You've selected the same song for both versions.")
+                        .font(.subheadline)
+                        .foregroundColor(.orange)
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                }
+                .padding()
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(10)
+                .padding(.horizontal)
+            }
             
             // Progress Section
             if viewModel.isProcessing {
@@ -90,19 +109,54 @@ struct ContentView: View {
             
             Spacer()
             
-            // Match Play Count Button
-            Button(action: {
-                matchPlayCount()
-            }) {
-                Text("Match Play Count")
-                    .font(.headline)
+            // Action Buttons
+            HStack(spacing: 15) {
+                // Match Play Count Button
+                Button(action: {
+                    matchPlayCount()
+                }) {
+                    VStack(spacing: 4) {
+                        Text("Match")
+                            .font(.headline)
+                        if viewModel.canMatchPlayCount && !viewModel.isSameSong {
+                            Text("\(viewModel.albumPlayCount) → \(viewModel.singlePlayCount)")
+                                .font(.caption)
+                        } else {
+                            Text("Make Equal")
+                                .font(.caption)
+                        }
+                    }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(viewModel.canMatchPlayCount ? Color.blue : Color.gray)
+                    .background(viewModel.canPerformActions ? Color.blue : Color.gray)
                     .cornerRadius(15)
+                }
+                .disabled(!viewModel.canPerformActions || viewModel.isProcessing)
+                
+                // Add Play Count Button
+                Button(action: {
+                    addPlayCount()
+                }) {
+                    VStack(spacing: 4) {
+                        Text("Add")
+                            .font(.headline)
+                        if viewModel.canMatchPlayCount && !viewModel.isSameSong {
+                            Text("\(viewModel.albumPlayCount) → \(viewModel.albumPlayCount + viewModel.singlePlayCount)")
+                                .font(.caption)
+                        } else {
+                            Text("Add Together")
+                                .font(.caption)
+                        }
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(viewModel.canPerformActions ? Color.green : Color.gray)
+                    .cornerRadius(15)
+                }
+                .disabled(!viewModel.canPerformActions || viewModel.isProcessing)
             }
-            .disabled(!viewModel.canMatchPlayCount || viewModel.isProcessing)
             .padding(.horizontal)
             .padding(.bottom, 30)
         }
@@ -146,7 +200,35 @@ struct ContentView: View {
             return
         }
         
+        if viewModel.isSameSong {
+            alertMessage = "You've selected the same song for both versions. Please choose different versions of the song."
+            showingAlert = true
+            return
+        }
+        
         viewModel.startMatching()
+    }
+    
+    private func addPlayCount() {
+        if viewModel.singleTrack == nil {
+            alertMessage = "Please select the single version first."
+            showingAlert = true
+            return
+        }
+        
+        if viewModel.albumTrack == nil {
+            alertMessage = "Please select the album version first."
+            showingAlert = true
+            return
+        }
+        
+        if viewModel.isSameSong {
+            alertMessage = "You've selected the same song for both versions. Please choose different versions of the song."
+            showingAlert = true
+            return
+        }
+        
+        viewModel.startAdding()
     }
     
     private func requestMusicLibraryAccess() {
