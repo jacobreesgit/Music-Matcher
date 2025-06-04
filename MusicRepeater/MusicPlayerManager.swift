@@ -12,16 +12,26 @@ class MusicPlayerManager: ObservableObject {
     private var currentTrack: MPMediaItem?
     private var targetTotalPlays: Int = 0
     private var playbackStateObserver: Any?
-    private var nowPlayingObserver: Any?
+    private var playbackTimer: Timer?
+    private let settingsManager = SettingsManager.shared
     
     init() {
-        // Use systemMusicPlayer to take over the system's now playing
-        // This will replace whatever is currently playing from Apple Music
-        self.musicPlayer = MPMusicPlayerController.systemMusicPlayer
+        // Initialize with default player, will be updated when playback starts
+        self.musicPlayer = MPMusicPlayerController.applicationMusicPlayer
+    }
+    
+    private func updateMusicPlayer() {
+        // Choose player type based on settings
+        if settingsManager.useSystemMusicPlayer {
+            musicPlayer = MPMusicPlayerController.systemMusicPlayer
+        } else {
+            musicPlayer = MPMusicPlayerController.applicationMusicPlayer
+        }
     }
     
     deinit {
         removeObservers()
+        playbackTimer?.invalidate()
     }
     
     func startFastForwardPlayback(track: MPMediaItem, times: Int, targetTotalPlays: Int) {
@@ -31,6 +41,12 @@ class MusicPlayerManager: ObservableObject {
         self.currentIteration = 0
         self.isProcessing = true
         self.completionMessage = ""
+        
+        // Update music player type based on current settings
+        updateMusicPlayer()
+        
+        // Set up observers once at the beginning
+        addObservers()
         
         // Start the first iteration
         playNextIteration()
@@ -46,32 +62,42 @@ class MusicPlayerManager: ObservableObject {
         
         // Get track duration
         let duration = track.playbackDuration
+        guard duration > 0 else {
+            handleError("Invalid track duration")
+            return
+        }
         
-        // Calculate seek time (5 seconds before end, or 30 seconds to be safer)
-        // Using 30 seconds to ensure iOS counts it as a full play
-        let seekTime = max(duration - 30, duration * 0.85) // At least 85% through
+        // Use fixed play duration of 32 seconds
+        let playDuration: TimeInterval = 32.0
+        
+        // Calculate seek time - play for the specified duration from the end
+        let seekTime = max(duration - playDuration, duration * 0.8)
         
         // Set up the queue with only this track
         let collection = MPMediaItemCollection(items: [track])
         musicPlayer.setQueue(with: collection)
         
-        // Add observers for this playback iteration
-        addObservers()
-        
         // Prepare and play
         musicPlayer.prepareToPlay { [weak self] error in
             if let error = error {
-                print("Error preparing to play: \(error)")
                 self?.handleError("Failed to prepare track for playback")
                 return
             }
             
             DispatchQueue.main.async {
+                guard let self = self else { return }
+                
                 // Seek to near the end
-                self?.musicPlayer.currentPlaybackTime = seekTime
+                self.musicPlayer.currentPlaybackTime = seekTime
                 
                 // Start playback
-                self?.musicPlayer.play()
+                self.musicPlayer.play()
+                
+                // Set up a backup timer using fixed duration
+                self.playbackTimer?.invalidate()
+                self.playbackTimer = Timer.scheduledTimer(withTimeInterval: playDuration, repeats: false) { _ in
+                    self.moveToNextIteration()
+                }
             }
         }
     }
@@ -89,15 +115,6 @@ class MusicPlayerManager: ObservableObject {
             self?.handlePlaybackStateChange()
         }
         
-        // Observe now playing item changes (as backup)
-        nowPlayingObserver = NotificationCenter.default.addObserver(
-            forName: .MPMusicPlayerControllerNowPlayingItemDidChange,
-            object: musicPlayer,
-            queue: .main
-        ) { [weak self] _ in
-            self?.handleNowPlayingChange()
-        }
-        
         // Begin generating notifications
         musicPlayer.beginGeneratingPlaybackNotifications()
     }
@@ -105,40 +122,56 @@ class MusicPlayerManager: ObservableObject {
     private func removeObservers() {
         if let observer = playbackStateObserver {
             NotificationCenter.default.removeObserver(observer)
-        }
-        if let observer = nowPlayingObserver {
-            NotificationCenter.default.removeObserver(observer)
+            playbackStateObserver = nil
         }
         musicPlayer.endGeneratingPlaybackNotifications()
     }
     
     private func handlePlaybackStateChange() {
-        if musicPlayer.playbackState == .stopped ||
-           musicPlayer.playbackState == .paused {
-            // Track finished or was paused
-            if musicPlayer.playbackState == .stopped {
-                // Increment iteration count
-                currentIteration += 1
-                
-                // Remove observers for this iteration
-                removeObservers()
-                
-                // Small delay before next iteration to ensure system registers the play
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                    self?.playNextIteration()
+        let state = musicPlayer.playbackState
+        
+        switch state {
+        case .stopped:
+            moveToNextIteration()
+        case .paused:
+            // Sometimes tracks end with paused state
+            if let track = currentTrack {
+                let currentTime = musicPlayer.currentPlaybackTime
+                let duration = track.playbackDuration
+                // If we're very close to the end, treat as finished
+                if currentTime >= duration - 2.0 {
+                    moveToNextIteration()
                 }
             }
+        case .playing:
+            break
+        default:
+            break
         }
     }
     
-    private func handleNowPlayingChange() {
-        // This is a backup in case playback state doesn't trigger properly
-        if musicPlayer.nowPlayingItem == nil && isProcessing {
-            // Track ended
-            currentIteration += 1
-            removeObservers()
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+    private func moveToNextIteration() {
+        // Prevent multiple calls
+        guard isProcessing && currentIteration < totalIterations else {
+            return
+        }
+        
+        // Stop current playback
+        musicPlayer.stop()
+        
+        // Invalidate timer
+        playbackTimer?.invalidate()
+        playbackTimer = nil
+        
+        // Increment iteration count
+        currentIteration += 1
+        
+        // Check if we're done
+        if currentIteration >= totalIterations {
+            completeProcess()
+        } else {
+            // Use fixed delay of 1 second before next iteration
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                 self?.playNextIteration()
             }
         }
@@ -150,11 +183,13 @@ class MusicPlayerManager: ObservableObject {
         
         // Clean up
         removeObservers()
+        playbackTimer?.invalidate()
+        playbackTimer = nil
         isProcessing = false
         
         // Set completion message
         if let trackName = currentTrack?.title {
-            completionMessage = "Done! '\(trackName)' has now been played a total of \(targetTotalPlays) times to match the single-version count."
+            completionMessage = "Done! '\(trackName)' has now been played a total of \(targetTotalPlays) times."
         } else {
             completionMessage = "Done! The album version has been played \(totalIterations) times."
         }
@@ -167,6 +202,8 @@ class MusicPlayerManager: ObservableObject {
     
     private func handleError(_ message: String) {
         removeObservers()
+        playbackTimer?.invalidate()
+        playbackTimer = nil
         isProcessing = false
         completionMessage = message
         musicPlayer.stop()
