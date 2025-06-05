@@ -1,16 +1,4 @@
-HStack {
-                                Image(systemName: "music.note.list")
-                                    .font(AppFont.title2)
-                                    .foregroundColor(Color.designPrimary)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Music Repeater")
-                                        .font(AppFont.headline)
-                                        .foregroundColor(Color.designTextPrimary)
-                                    
-                                    Text("Version 1.0")
-                                        .font(AppFont.caption)
-                                import SwiftUI
+import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var settingsManager = SettingsManager.shared
@@ -54,12 +42,12 @@ struct SettingsView: View {
                             HStack {
                                 Image(systemName: "music.note.list")
                                     .font(AppFont.title2)
-                                    .foregroundColor(Color.appPrimary)
+                                    .foregroundColor(Color.designPrimary)
                                 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Music Repeater")
                                         .font(AppFont.headline)
-                                        .foregroundColor(Color.appTextPrimary)
+                                        .foregroundColor(Color.designTextPrimary)
                                     
                                     Text("Version 1.0")
                                         .font(AppFont.caption)
