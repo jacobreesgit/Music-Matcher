@@ -6,90 +6,118 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
-                Section(header: Text("Music Player")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Use System Music Player")
-                                .font(.body)
+                // Music Player Settings Section
+                Section(header: sectionHeader("Music Player")) {
+                    AppCard(padding: AppSpacing.small) {
+                        VStack(alignment: .leading, spacing: AppSpacing.small) {
+                            HStack {
+                                Text("Use System Music Player")
+                                    .font(AppFont.body)
+                                    .foregroundColor(Color.appTextPrimary)
+                                
+                                Spacer()
+                                
+                                Toggle("", isOn: $settingsManager.useSystemMusicPlayer)
+                                    .labelsHidden()
+                                    .accentColor(Color.appPrimary)
+                            }
                             
-                            Spacer()
-                            
-                            Toggle("", isOn: $settingsManager.useSystemMusicPlayer)
-                                .labelsHidden()
+                            Text(settingsManager.useSystemMusicPlayer ?
+                                 "Will replace currently playing music" :
+                                 "Won't interfere with currently playing music")
+                                .font(AppFont.caption)
+                                .foregroundColor(Color.appTextSecondary)
                         }
-                        
-                        Text(settingsManager.useSystemMusicPlayer ?
-                             "Will replace currently playing music" :
-                             "Won't interfere with currently playing music")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        .appPadding()
                     }
-                    .padding(.vertical, 4)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
                 }
                 
-                Section(header: Text("About Music Repeater")) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Image(systemName: "music.note.list")
-                                .font(.title2)
-                                .foregroundColor(.blue)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Music Repeater")
-                                    .font(.headline)
-                                Text("Version 1.0")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                // About Section
+                Section(header: sectionHeader("About Music Repeater")) {
+                    AppCard(padding: AppSpacing.medium) {
+                        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                            // App Header
+                            HStack {
+                                Image(systemName: "music.note.list")
+                                    .font(AppFont.title2)
+                                    .foregroundColor(Color.appPrimary)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Music Repeater")
+                                        .font(AppFont.headline)
+                                        .foregroundColor(Color.appTextPrimary)
+                                    
+                                    Text("Version 1.0")
+                                        .font(AppFont.caption)
+                                        .foregroundColor(Color.appTextSecondary)
+                                }
+                                
+                                Spacer()
                             }
                             
-                            Spacer()
-                        }
-                        
-                        Text("Synchronize play counts between different versions of the same song.")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Features:")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
+                            // Description
+                            Text("Synchronize play counts between different versions of the same song.")
+                                .font(AppFont.body)
+                                .foregroundColor(Color.appTextSecondary)
                             
-                            VStack(alignment: .leading, spacing: 4) {
-                                FeatureRow(text: "Match play counts between single and album versions")
-                                FeatureRow(text: "Add play counts together")
-                                FeatureRow(text: "Fast-forward playback to save time")
-                                FeatureRow(text: "Choose between system and application music players")
+                            // Features Section
+                            VStack(alignment: .leading, spacing: AppSpacing.small) {
+                                Text("Features:")
+                                    .font(AppFont.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(Color.appTextPrimary)
+                                
+                                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                                    AppFeatureRow("Match play counts between single and album versions")
+                                    AppFeatureRow("Add play counts together")
+                                    AppFeatureRow("Fast-forward playback to save time")
+                                    AppFeatureRow("Choose between system and application music players")
+                                }
                             }
+                            
+                            // Footer
+                            Text("Made with ♥ for music lovers")
+                                .font(AppFont.caption)
+                                .foregroundColor(Color.appTextSecondary)
+                                .italic()
+                                .padding(.top, AppSpacing.small)
                         }
-                        
-                        Text("Made with ♥ for music lovers")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .italic()
-                            .padding(.top, 8)
                     }
-                    .padding(.vertical, 8)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
                 }
             }
+            .background(Color.appBackground)
+            .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.large)
         }
+        .accentColor(Color.appPrimary)
     }
-}
-
-struct FeatureRow: View {
-    let text: String
     
-    var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text("•")
-                .foregroundColor(.blue)
-                .fontWeight(.bold)
-            Text(text)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            Spacer()
-        }
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(AppFont.subheadline)
+            .fontWeight(.medium)
+            .foregroundColor(Color.appTextSecondary)
+            .textCase(.none)
     }
 }
 
-// Remove the separate AboutView since it's now integrated
+#if DEBUG
+struct SettingsView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            SettingsView()
+                .preferredColorScheme(.light)
+                .previewDisplayName("Light Mode")
+            
+            SettingsView()
+                .preferredColorScheme(.dark)
+                .previewDisplayName("Dark Mode")
+        }
+    }
+}
+#endif

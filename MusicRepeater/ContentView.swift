@@ -39,139 +39,76 @@ struct ContentView: View {
     }
     
     private var authorizedView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: AppSpacing.large) {
+            // Main Title
             Text("Music Repeater")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .padding(.top, 40)
+                .font(AppFont.largeTitle)
+                .foregroundColor(Color.appTextPrimary)
+                .padding(.top, AppSpacing.xxl)
             
-            VStack(spacing: 15) {
+            VStack(spacing: AppSpacing.medium) {
                 // Single Version Section
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Single Version")
-                        .font(.headline)
+                VStack(alignment: .leading, spacing: AppSpacing.small) {
+                    AppSectionHeader("Single Version")
                     
-                    Button(action: {
+                    AppSelectionButton(
+                        icon: "music.note",
+                        title: viewModel.singleTrackName.isEmpty ? "Choose Single Version" : viewModel.singleTrackName,
+                        subtitle: viewModel.singleTrackName.isEmpty ? nil : "Play Count: \(viewModel.singlePlayCount)"
+                    ) {
                         showingSinglePicker = true
-                    }) {
-                        HStack {
-                            Image(systemName: "music.note")
-                            Text(viewModel.singleTrackName.isEmpty ? "Choose Single Version" : viewModel.singleTrackName)
-                                .lineLimit(1)
-                            Spacer()
-                        }
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(10)
-                    }
-                    
-                    if !viewModel.singleTrackName.isEmpty {
-                        Text("Play Count: \(viewModel.singlePlayCount)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .padding(.leading, 5)
                     }
                 }
                 
                 // Album Version Section
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Album Version")
-                        .font(.headline)
+                VStack(alignment: .leading, spacing: AppSpacing.small) {
+                    AppSectionHeader("Album Version")
                     
-                    Button(action: {
+                    AppSelectionButton(
+                        icon: "music.note.list",
+                        title: viewModel.albumTrackName.isEmpty ? "Choose Album Version" : viewModel.albumTrackName,
+                        subtitle: viewModel.albumTrackName.isEmpty ? nil : "Play Count: \(viewModel.albumPlayCount)"
+                    ) {
                         showingAlbumPicker = true
-                    }) {
-                        HStack {
-                            Image(systemName: "music.note.list")
-                            Text(viewModel.albumTrackName.isEmpty ? "Choose Album Version" : viewModel.albumTrackName)
-                                .lineLimit(1)
-                            Spacer()
-                        }
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(10)
-                    }
-                    
-                    if !viewModel.albumTrackName.isEmpty {
-                        Text("Play Count: \(viewModel.albumPlayCount)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .padding(.leading, 5)
                     }
                 }
             }
-            .padding(.horizontal)
+            .appPadding(.horizontal)
             
-            // Same Song Warning - Full Width
+            // Same Song Warning
             if viewModel.isSameSong {
-                HStack {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
-                    Text("Warning: You've selected the same song for both versions.")
-                        .font(.subheadline)
-                        .foregroundColor(.orange)
-                        .multilineTextAlignment(.leading)
-                    Spacer()
-                }
-                .padding()
-                .background(Color.orange.opacity(0.1))
-                .cornerRadius(10)
-                .padding(.horizontal)
+                AppWarningBanner("Warning: You've selected the same song for both versions.")
+                    .appPadding(.horizontal)
             }
             
             Spacer()
             
             // Action Buttons
-            HStack(spacing: 15) {
+            HStack(spacing: AppSpacing.medium) {
                 // Match Play Count Button
-                Button(action: {
+                AppPrimaryButton(
+                    "Match",
+                    subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
+                        "\(viewModel.albumPlayCount) → \(viewModel.singlePlayCount)" : "Make Equal",
+                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
+                ) {
                     matchPlayCount()
-                }) {
-                    VStack(spacing: 4) {
-                        Text("Match")
-                            .font(.headline)
-                        if viewModel.canMatchPlayCount && !viewModel.isSameSong {
-                            Text("\(viewModel.albumPlayCount) → \(viewModel.singlePlayCount)")
-                                .font(.caption)
-                        } else {
-                            Text("Make Equal")
-                                .font(.caption)
-                        }
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(viewModel.canPerformActions ? Color.blue : Color.gray)
-                    .cornerRadius(15)
                 }
-                .disabled(!viewModel.canPerformActions || viewModel.isProcessing)
                 
                 // Add Play Count Button
-                Button(action: {
+                AppSecondaryButton(
+                    "Add",
+                    subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
+                        "\(viewModel.albumPlayCount) → \(viewModel.albumPlayCount + viewModel.singlePlayCount)" : "Add Together",
+                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
+                ) {
                     addPlayCount()
-                }) {
-                    VStack(spacing: 4) {
-                        Text("Add")
-                            .font(.headline)
-                        if viewModel.canMatchPlayCount && !viewModel.isSameSong {
-                            Text("\(viewModel.albumPlayCount) → \(viewModel.albumPlayCount + viewModel.singlePlayCount)")
-                                .font(.caption)
-                        } else {
-                            Text("Add Together")
-                                .font(.caption)
-                        }
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(viewModel.canPerformActions ? Color.green : Color.gray)
-                    .cornerRadius(15)
                 }
-                .disabled(!viewModel.canPerformActions || viewModel.isProcessing)
             }
-            .padding(.horizontal)
-            .padding(.bottom, 30)
+            .appPadding(.horizontal)
+            .padding(.bottom, AppSpacing.xl)
         }
+        .background(Color.appBackground)
         .sheet(isPresented: $showingSinglePicker) {
             MediaPickerView(onSelection: { item in
                 viewModel.selectSingleTrack(item)
@@ -188,85 +125,42 @@ struct ContentView: View {
     }
     
     private var permissionRequestView: some View {
-        VStack(spacing: 30) {
-            Spacer()
-            
-            // Icon
-            Image(systemName: "music.note.house")
-                .font(.system(size: 80))
-                .foregroundColor(.blue)
-            
-            // Title and Description
-            VStack(spacing: 15) {
-                Text("Music Library Access")
-                    .font(.title)
-                    .fontWeight(.bold)
-                
-                Text("Music Repeater needs access to your music library to synchronize play counts between different versions of songs.")
-                    .font(.body)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 30)
-            }
-            
-            // Permission button
+        Group {
             if musicLibraryPermission == .denied {
-                Button(action: {
-                    // Open Settings since permission was denied
-                    if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(settingsUrl)
+                AppPermissionScreen(
+                    icon: "music.note.house",
+                    title: "Music Library Access",
+                    description: "Music Repeater needs access to your music library to synchronize play counts between different versions of songs.",
+                    buttonTitle: "Open Settings",
+                    buttonAction: {
+                        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(settingsUrl)
+                        }
+                    },
+                    statusMessage: "To use Music Repeater, please enable Music access in Settings → Privacy & Security → Media & Apple Music → Music Repeater"
+                )
+            } else if musicLibraryPermission == .restricted {
+                AppPermissionScreen(
+                    icon: "music.note.house",
+                    title: "Music Library Access",
+                    description: "Music access is restricted on this device.",
+                    buttonTitle: "Contact Administrator",
+                    buttonAction: { },
+                    statusMessage: "Music access is restricted and cannot be enabled by the user."
+                )
+            } else {
+                AppPermissionScreen(
+                    icon: "music.note.house",
+                    title: "Music Library Access",
+                    description: "Music Repeater needs access to your music library to synchronize play counts between different versions of songs.",
+                    buttonTitle: "Grant Music Access",
+                    buttonAction: {
+                        requestMusicLibraryAccess()
                     }
-                }) {
-                    Text("Open Settings")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(15)
-                }
-                .padding(.horizontal, 40)
-            } else if musicLibraryPermission == .notDetermined {
-                Button(action: {
-                    requestMusicLibraryAccess()
-                }) {
-                    Text("Grant Music Access")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(15)
-                }
-                .padding(.horizontal, 40)
+                )
             }
-            
-            // Status text
-            Group {
-                if musicLibraryPermission == .denied {
-                    VStack(spacing: 10) {
-                        Text("Access Denied")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.red)
-                        
-                        Text("To use Music Repeater, please enable Music access in Settings → Privacy & Security → Media & Apple Music → Music Repeater")
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 20)
-                    }
-                } else if musicLibraryPermission == .restricted {
-                    Text("Music access is restricted on this device")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                }
-            }
-            
-            Spacer()
         }
+        .background(Color.appBackground)
     }
     
     private func checkMusicLibraryPermission() {

@@ -6,109 +6,107 @@ struct ProcessingView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
+            VStack(spacing: AppSpacing.xl) {
                 Spacer()
                 
                 // Track Info Section
-                VStack(spacing: 15) {
+                VStack(spacing: AppSpacing.medium) {
                     Text("Processing")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
+                        .font(AppFont.largeTitle)
+                        .foregroundColor(Color.appTextPrimary)
                     
                     Text(viewModel.albumTrackName)
-                        .font(.title2)
-                        .fontWeight(.medium)
+                        .font(AppFont.title2)
+                        .foregroundColor(Color.appTextPrimary)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .appPadding(.horizontal)
                     
                     Text("Building up play count...")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(AppFont.subheadline)
+                        .foregroundColor(Color.appTextSecondary)
                 }
                 
                 // Animated Progress Ring
                 ZStack {
-                    AnimatedProgressRing(
+                    AppProgressRing(
                         progress: viewModel.totalIterations > 0 ?
                             Double(viewModel.currentIteration) / Double(viewModel.totalIterations) : 0.0,
                         lineWidth: 12,
-                        ringColor: Color.blue.opacity(0.3),
-                        progressColor: Color.blue
+                        size: 200
                     )
-                    .frame(width: 200, height: 200)
                     
-                    VStack(spacing: 8) {
+                    VStack(spacing: AppSpacing.small) {
                         Text("\(viewModel.currentIteration)")
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
+                            .font(AppFont.counterLarge)
+                            .foregroundColor(Color.appTextPrimary)
                         
                         Text("of \(viewModel.totalIterations)")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
+                            .font(AppFont.headline)
+                            .foregroundColor(Color.appTextSecondary)
                         
                         Text("plays")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .font(AppFont.subheadline)
+                            .foregroundColor(Color.appTextSecondary)
                     }
                 }
                 
                 // Progress Details
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("Current Play Count:")
-                        Spacer()
-                        Text("\(viewModel.albumPlayCount + viewModel.currentIteration)")
-                            .fontWeight(.semibold)
-                    }
-                    
-                    HStack {
-                        Text("Target:")
-                        Spacer()
-                        Text("\(viewModel.getTargetPlayCount())")
-                            .fontWeight(.semibold)
-                            .foregroundColor(.blue)
+                AppCard(padding: AppSpacing.medium) {
+                    VStack(spacing: AppSpacing.small) {
+                        AppInfoRow(
+                            "Current Play Count:",
+                            value: "\(viewModel.albumPlayCount + viewModel.currentIteration)"
+                        )
+                        
+                        AppInfoRow(
+                            "Target:",
+                            value: "\(viewModel.getTargetPlayCount())",
+                            valueColor: Color.appPrimary
+                        )
                     }
                 }
-                .padding(.horizontal, 40)
-                .font(.subheadline)
+                .appPadding(.horizontal)
                 
                 Spacer()
                 
                 // Playback Controls
-                HStack(spacing: 30) {
-                    // Play/Pause Button
-                    Button(action: {
-                        viewModel.togglePlayback()
-                    }) {
-                        Image(systemName: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.blue)
+                VStack(spacing: AppSpacing.medium) {
+                    HStack(spacing: AppSpacing.xl) {
+                        // Play/Pause Button
+                        AppControlButton(
+                            icon: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill",
+                            color: Color.appPrimary,
+                            size: 60
+                        ) {
+                            viewModel.togglePlayback()
+                        }
+                        
+                        // Stop Button
+                        AppControlButton(
+                            icon: "stop.circle.fill",
+                            color: Color.appError,
+                            size: 60
+                        ) {
+                            viewModel.stopProcessing()
+                            presentationMode.wrappedValue.dismiss()
+                        }
                     }
                     
-                    // Stop Button
-                    Button(action: {
-                        viewModel.stopProcessing()
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
-                        Image(systemName: "stop.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.red)
+                    // Control Labels
+                    HStack(spacing: 70) {
+                        Text(viewModel.isPlaying ? "Pause" : "Resume")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.appTextSecondary)
+                        
+                        Text("Stop")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.appTextSecondary)
                     }
-                }
-                
-                // Control Labels
-                HStack(spacing: 70) {
-                    Text(viewModel.isPlaying ? "Pause" : "Resume")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Text("Stop")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()
             }
+            .background(Color.appBackground)
             .navigationBarHidden(true)
             .onDisappear {
                 // Don't stop processing when view disappears unless explicitly stopped
@@ -118,54 +116,26 @@ struct ProcessingView: View {
     }
 }
 
-struct AnimatedProgressRing: View {
-    let progress: Double
-    let lineWidth: CGFloat
-    let ringColor: Color
-    let progressColor: Color
-    
-    @State private var animatedProgress: Double = 0
-    
-    var body: some View {
-        ZStack {
-            // Background ring
-            Circle()
-                .stroke(ringColor, lineWidth: lineWidth)
+#if DEBUG
+struct ProcessingView_Previews: PreviewProvider {
+    static var previews: some View {
+        // Create a mock view model for preview
+        let viewModel = MusicRepeaterViewModel()
+        // Set some mock data
+        // viewModel.albumTrackName = "Sample Song - Artist Name"
+        // viewModel.currentIteration = 5
+        // viewModel.totalIterations = 20
+        // viewModel.albumPlayCount = 10
+        
+        return Group {
+            ProcessingView(viewModel: viewModel)
+                .preferredColorScheme(.light)
+                .previewDisplayName("Light Mode")
             
-            // Progress ring
-            Circle()
-                .trim(from: 0, to: animatedProgress)
-                .stroke(
-                    progressColor,
-                    style: StrokeStyle(
-                        lineWidth: lineWidth,
-                        lineCap: .round
-                    )
-                )
-                .rotationEffect(.degrees(-90))
-                .animation(.easeInOut(duration: 0.5), value: animatedProgress)
-            
-            // Glow effect
-            Circle()
-                .trim(from: 0, to: animatedProgress)
-                .stroke(
-                    progressColor.opacity(0.3),
-                    style: StrokeStyle(
-                        lineWidth: lineWidth + 4,
-                        lineCap: .round
-                    )
-                )
-                .rotationEffect(.degrees(-90))
-                .blur(radius: 3)
-                .animation(.easeInOut(duration: 0.5), value: animatedProgress)
-        }
-        .onChange(of: progress) { newProgress in
-            withAnimation(.easeInOut(duration: 0.3)) {
-                animatedProgress = newProgress
-            }
-        }
-        .onAppear {
-            animatedProgress = progress
+            ProcessingView(viewModel: viewModel)
+                .preferredColorScheme(.dark)
+                .previewDisplayName("Dark Mode")
         }
     }
 }
+#endif
