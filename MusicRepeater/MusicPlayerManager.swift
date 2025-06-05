@@ -143,7 +143,7 @@ class MusicPlayerManager: ObservableObject {
         
         // Prepare and play
         musicPlayer.prepareToPlay { [weak self] error in
-            if let error = error {
+            if error != nil {
                 self?.handleError("Failed to prepare track for playback")
                 return
             }

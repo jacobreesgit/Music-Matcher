@@ -6,7 +6,7 @@ struct MainTabView: View {
             ContentView()
                 .tabItem {
                     Image(systemName: "music.note")
-                        .accessibleElement(label: "Music Repeater")
+                        .accessibilityLabel("Music Repeater")
                     Text("Repeater")
                         .font(AppFont.caption)
                 }
@@ -14,7 +14,7 @@ struct MainTabView: View {
             SettingsView()
                 .tabItem {
                     Image(systemName: "gear")
-                        .accessibleElement(label: "Settings")
+                        .accessibilityLabel("Settings")
                     Text("Settings")
                         .font(AppFont.caption)
                 }
