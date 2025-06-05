@@ -15,7 +15,7 @@ struct ProcessingView: View {
                         .font(AppFont.largeTitle)
                         .foregroundColor(Color.designTextPrimary)
                     
-                    Text(viewModel.albumTrackName)
+                    Text(viewModel.targetTrackName)
                         .font(AppFont.title2)
                         .foregroundColor(Color.designTextPrimary)
                         .multilineTextAlignment(.center)
@@ -55,7 +55,7 @@ struct ProcessingView: View {
                     VStack(spacing: AppSpacing.small) {
                         AppInfoRow(
                             "Current Play Count:",
-                            value: "\(viewModel.albumPlayCount + viewModel.currentIteration)"
+                            value: "\(viewModel.targetPlayCount + viewModel.currentIteration)"
                         )
                         
                         AppInfoRow(
@@ -122,10 +122,10 @@ struct ProcessingView_Previews: PreviewProvider {
         // Create a mock view model for preview
         let viewModel = MusicRepeaterViewModel()
         // Set some mock data
-        // viewModel.albumTrackName = "Sample Song - Artist Name"
+        // viewModel.targetTrackName = "Sample Song - Artist Name"
         // viewModel.currentIteration = 5
         // viewModel.totalIterations = 20
-        // viewModel.albumPlayCount = 10
+        // viewModel.targetPlayCount = 10
         
         return Group {
             ProcessingView(viewModel: viewModel)

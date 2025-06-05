@@ -7,20 +7,12 @@ struct SettingsView: View {
         NavigationView {
             List {
                 // Music Player Settings Section
-                Section(header: sectionHeader("Music Player")) {
-                    AppCard(padding: AppSpacing.small) {
-                        VStack(alignment: .leading, spacing: AppSpacing.small) {
-                            HStack {
-                                Text("Use System Music Player")
-                                    .font(AppFont.body)
-                                    .foregroundColor(Color.designTextPrimary)
-                                
-                                Spacer()
-                                
-                                Toggle("", isOn: $settingsManager.useSystemMusicPlayer)
-                                    .labelsHidden()
-                                    .accentColor(Color.designPrimary)
-                            }
+                Section {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Use System Music Player")
+                                .font(AppFont.body)
+                                .foregroundColor(Color.designTextPrimary)
                             
                             Text(settingsManager.useSystemMusicPlayer ?
                                  "Will replace currently playing music" :
@@ -28,68 +20,18 @@ struct SettingsView: View {
                                 .font(AppFont.caption)
                                 .foregroundColor(Color.designTextSecondary)
                         }
-                        .appPadding()
+                        
+                        Spacer()
+                        
+                        Toggle("", isOn: $settingsManager.useSystemMusicPlayer)
+                            .labelsHidden()
+                            .accentColor(Color.designPrimary)
                     }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-                }
-                
-                // About Section
-                Section(header: sectionHeader("About Music Repeater")) {
-                    AppCard(padding: AppSpacing.medium) {
-                        VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                            // App Header
-                            HStack {
-                                Image(systemName: "music.note.list")
-                                    .font(AppFont.title2)
-                                    .foregroundColor(Color.designPrimary)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Music Repeater")
-                                        .font(AppFont.headline)
-                                        .foregroundColor(Color.designTextPrimary)
-                                    
-                                    Text("Version 1.0")
-                                        .font(AppFont.caption)
-                                        .foregroundColor(Color.designTextSecondary)
-                                }
-                                
-                                Spacer()
-                            }
-                            
-                            // Description
-                            Text("Synchronize play counts between different versions of the same song.")
-                                .font(AppFont.body)
-                                .foregroundColor(Color.designTextSecondary)
-                            
-                            // Features Section
-                            VStack(alignment: .leading, spacing: AppSpacing.small) {
-                                Text("Features:")
-                                    .font(AppFont.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(Color.designTextPrimary)
-                                
-                                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                                    AppFeatureRow("Match play counts between single and album versions")
-                                    AppFeatureRow("Add play counts together")
-                                    AppFeatureRow("Fast-forward playback to save time")
-                                    AppFeatureRow("Choose between system and application music players")
-                                }
-                            }
-                            
-                            // Footer
-                            Text("Made with ♥ for music lovers")
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designTextSecondary)
-                                .italic()
-                                .padding(.top, AppSpacing.small)
-                        }
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
+                    .padding(.vertical, 8)
+                    .listRowBackground(Color(UIColor.systemBackground))
                 }
             }
-            .background(Color.designBackground)
+            .background(Color(UIColor.systemGroupedBackground))
             .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)

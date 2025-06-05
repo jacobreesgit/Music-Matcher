@@ -133,13 +133,21 @@ enum AppCornerRadius {
 }
 
 // MARK: - Shadow System
-struct AppShadow {
-    /// Light shadow for subtle elevation
-    static let light = Shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-    /// Medium shadow for cards
-    static let medium = Shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
-    /// Heavy shadow for modals and important elements
-    static let heavy = Shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+enum AppShadow {
+    case light
+    case medium
+    case heavy
+    
+    var shadow: Shadow {
+        switch self {
+        case .light:
+            return Shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+        case .medium:
+            return Shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+        case .heavy:
+            return Shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+        }
+    }
     
     struct Shadow {
         let color: Color
@@ -196,6 +204,7 @@ struct AppPrimaryButton: View {
             .background(
                 RoundedRectangle(cornerRadius: AppCornerRadius.large)
                     .fill(isEnabled ? Color.designPrimary : Color.designTextTertiary)
+                    .appShadow(.light)
             )
         }
         .disabled(!isEnabled)
@@ -388,7 +397,7 @@ struct AppProgressRing: View {
                 .animation(AppAnimation.standard, value: animatedProgress)
         }
         .frame(width: size, height: size)
-        .onChange(of: progress) { newProgress in
+        .onChange(of: progress) { _, newProgress in
             withAnimation(AppAnimation.standard) {
                 animatedProgress = newProgress
             }
@@ -603,10 +612,11 @@ struct AppCardStyle: ViewModifier {
 
 // MARK: Shadow Modifier
 struct AppShadowModifier: ViewModifier {
-    let shadow: AppShadow.Shadow
+    let shadowType: AppShadow
     
     func body(content: Content) -> some View {
-        content
+        let shadow = shadowType.shadow
+        return content
             .shadow(
                 color: shadow.color,
                 radius: shadow.radius,
@@ -624,8 +634,8 @@ extension View {
     }
     
     /// Applies app shadow styling
-    func appShadow(_ shadow: AppShadow.Shadow) -> some View {
-        self.modifier(AppShadowModifier(shadow: shadow))
+    func appShadow(_ shadowType: AppShadow) -> some View {
+        self.modifier(AppShadowModifier(shadowType: shadowType))
     }
     
     /// Applies standard app padding
@@ -673,74 +683,3 @@ extension View {
             }
     }
 }
-
-/*
- MARK: - Integration Instructions
- 
- 1. ADDING TO PROJECT:
-    - Copy this entire DesignSystem.swift file into your Xcode project
-    - Add it to your MusicRepeater target
-    - Ensure it compiles without errors
- 
- 2. UPDATING ASSETS.XCASSETS:
-    Add these color sets to Assets.xcassets with light/dark variants:
-    - AppPrimary (Blue: #007AFF / #0A84FF)
-    - AppPrimaryDark (Blue: #0051D0 / #0066CC)
-    - AppSecondary (Green: #34C759 / #30D158)
-    - AppSecondaryDark (Green: #248A3D / #20B946)
-    - AppSuccess (Green: #34C759 / #30D158)
-    - AppWarning (Orange: #FF9500 / #FF9F0A)
-    - AppError (Red: #FF3B30 / #FF453A)
-    - AppInfo (Light Blue: #5AC8FA / #64D2FF)
-    - AppTextPrimary (Black: #000000 / #FFFFFF)
-    - AppTextSecondary (Gray: #6D6D70 / #98989A)
-    - AppTextTertiary (Light Gray: #C7C7CC / #48484A)
-    - AppBackground (White: #FFFFFF / #000000)
-    - AppBackgroundSecondary (Off White: #F2F2F7 / #1C1C1E)
-    - AppBackgroundTertiary (Light Gray: #E5E5EA / #2C2C2E)
- 
- 3. MIGRATING EXISTING VIEWS:
-    Replace existing code patterns with design system components:
-    
-    ContentView.swift:
-    - Replace hard-coded buttons with AppPrimaryButton and AppSecondaryButton
-    - Replace selection buttons with AppSelectionButton
-    - Replace warning section with AppWarningBanner
-    - Replace Color.blue with Color.appPrimary
-    - Replace Color.green with Color.appSecondary
-    - Replace Color.gray.opacity(0.2) with Color.appCardBackground
-    
-    ProcessingView.swift:
-    - Replace AnimatedProgressRing with AppProgressRing
-    - Replace control buttons with AppControlButton
-    - Replace info rows with AppInfoRow
-    
-    SettingsView.swift:
-    - Replace FeatureRow with AppFeatureRow
-    - Replace manual styling with AppCard wrapper
-    - Replace hard-coded colors with semantic colors
-    
-    MainTabView.swift:
-    - Replace .accentColor(.blue) with .accentColor(Color.appPrimary)
- 
- 4. TESTING:
-    - Test all components in SwiftUI Previews
-    - Verify light/dark mode switching
-    - Test with Dynamic Type sizes
-    - Verify accessibility with VoiceOver
-    - Test on different device sizes
- 
- 5. FOLDER ORGANIZATION:
-    Create this folder structure in Xcode:
-    ├── DesignSystem/
-    │   ├── DesignSystem.swift (this file)
-    └── Views/
-        ├── ContentView.swift
-        ├── ProcessingView.swift
-        ├── SettingsView.swift
-        └── MainTabView.swift
- 
- Note: This design system uses Color assets that adapt automatically to light/dark mode.
- If assets are not available, the system falls back to hard-coded colors.
- Always test color contrast ratios to ensure accessibility compliance.
- */

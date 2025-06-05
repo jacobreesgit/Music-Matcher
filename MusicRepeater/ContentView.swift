@@ -3,8 +3,8 @@ import MediaPlayer
 
 struct ContentView: View {
     @StateObject private var viewModel = MusicRepeaterViewModel()
-    @State private var showingSinglePicker = false
-    @State private var showingAlbumPicker = false
+    @State private var showingSourcePicker = false
+    @State private var showingTargetPicker = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
     @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
@@ -39,84 +39,92 @@ struct ContentView: View {
     }
     
     private var authorizedView: some View {
-        VStack(spacing: AppSpacing.large) {
-            // Main Title
-            Text("Music Repeater")
-                .font(AppFont.largeTitle)
-                .foregroundColor(Color.designTextPrimary)
-                .padding(.top, AppSpacing.xxl)
-            
-            VStack(spacing: AppSpacing.medium) {
-                // Single Version Section
-                VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    AppSectionHeader("Single Version")
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: AppSpacing.large) {
+                    // Main Title
+                    Text("Music Repeater")
+                        .font(AppFont.largeTitle)
+                        .foregroundColor(Color.designTextPrimary)
+                        .padding(.top, AppSpacing.xxl)
                     
-                    AppSelectionButton(
-                        icon: "music.note",
-                        title: viewModel.singleTrackName.isEmpty ? "Choose Single Version" : viewModel.singleTrackName,
-                        subtitle: viewModel.singleTrackName.isEmpty ? nil : "Play Count: \(viewModel.singlePlayCount)"
-                    ) {
-                        showingSinglePicker = true
+                    VStack(spacing: AppSpacing.medium) {
+                        // Source Track Section
+                        VStack(alignment: .leading, spacing: AppSpacing.small) {
+                            AppSectionHeader("Source Track", subtitle: "Track to copy play count from")
+                            
+                            AppSelectionButton(
+                                icon: "music.note",
+                                title: viewModel.sourceTrackName.isEmpty ? "Choose Source Track" : viewModel.sourceTrackName,
+                                subtitle: viewModel.sourceTrackName.isEmpty ? nil : "Play Count: \(viewModel.sourcePlayCount)"
+                            ) {
+                                showingSourcePicker = true
+                            }
+                        }
+                        
+                        // Target Track Section
+                        VStack(alignment: .leading, spacing: AppSpacing.small) {
+                            AppSectionHeader("Target Track", subtitle: "Track to update play count for")
+                            
+                            AppSelectionButton(
+                                icon: "music.note.list",
+                                title: viewModel.targetTrackName.isEmpty ? "Choose Target Track" : viewModel.targetTrackName,
+                                subtitle: viewModel.targetTrackName.isEmpty ? nil : "Play Count: \(viewModel.targetPlayCount)"
+                            ) {
+                                showingTargetPicker = true
+                            }
+                        }
                     }
-                }
-                
-                // Album Version Section
-                VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    AppSectionHeader("Album Version")
-                    
-                    AppSelectionButton(
-                        icon: "music.note.list",
-                        title: viewModel.albumTrackName.isEmpty ? "Choose Album Version" : viewModel.albumTrackName,
-                        subtitle: viewModel.albumTrackName.isEmpty ? nil : "Play Count: \(viewModel.albumPlayCount)"
-                    ) {
-                        showingAlbumPicker = true
-                    }
-                }
-            }
-            .appPadding(.horizontal)
-            
-            // Same Song Warning
-            if viewModel.isSameSong {
-                AppWarningBanner("Warning: You've selected the same song for both versions.")
                     .appPadding(.horizontal)
-            }
-            
-            Spacer()
-            
-            // Action Buttons
-            HStack(spacing: AppSpacing.medium) {
-                // Match Play Count Button
-                AppPrimaryButton(
-                    "Match",
-                    subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
-                        "\(viewModel.albumPlayCount) → \(viewModel.singlePlayCount)" : "Make Equal",
-                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
-                ) {
-                    matchPlayCount()
-                }
-                
-                // Add Play Count Button
-                AppSecondaryButton(
-                    "Add",
-                    subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
-                        "\(viewModel.albumPlayCount) → \(viewModel.albumPlayCount + viewModel.singlePlayCount)" : "Add Together",
-                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
-                ) {
-                    addPlayCount()
+                    
+                    // Same Song Warning
+                    if viewModel.isSameSong {
+                        AppWarningBanner("Warning: You've selected the same song for both source and target.")
+                            .appPadding(.horizontal)
+                    }
+                    
+                    // Add bottom spacing for safe area
+                    Spacer(minLength: 120)
                 }
             }
-            .appPadding(.horizontal)
-            .padding(.bottom, AppSpacing.xl)
+            
+            // Fixed Action Buttons at bottom
+            VStack(spacing: AppSpacing.small) {
+                HStack(spacing: AppSpacing.medium) {
+                    // Match Play Count Button
+                    AppPrimaryButton(
+                        "Match",
+                        subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
+                            "\(viewModel.targetPlayCount) → \(viewModel.sourcePlayCount)" : "Make Equal",
+                        isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
+                    ) {
+                        matchPlayCount()
+                    }
+                    
+                    // Add Play Count Button
+                    AppSecondaryButton(
+                        "Add",
+                        subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
+                            "\(viewModel.targetPlayCount) → \(viewModel.targetPlayCount + viewModel.sourcePlayCount)" : "Add Together",
+                        isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
+                    ) {
+                        addPlayCount()
+                    }
+                }
+                .appPadding(.horizontal)
+            }
+            .padding(.bottom, AppSpacing.medium)
+            .background(Color(UIColor.systemGroupedBackground))
         }
-        .background(Color.designBackground)
-        .sheet(isPresented: $showingSinglePicker) {
+        .background(Color(UIColor.systemGroupedBackground))
+        .sheet(isPresented: $showingSourcePicker) {
             MediaPickerView(onSelection: { item in
-                viewModel.selectSingleTrack(item)
+                viewModel.selectSourceTrack(item)
             })
         }
-        .sheet(isPresented: $showingAlbumPicker) {
+        .sheet(isPresented: $showingTargetPicker) {
             MediaPickerView(onSelection: { item in
-                viewModel.selectAlbumTrack(item)
+                viewModel.selectTargetTrack(item)
             })
         }
         .fullScreenCover(isPresented: $viewModel.showingProcessingView) {
@@ -168,20 +176,20 @@ struct ContentView: View {
     }
     
     private func matchPlayCount() {
-        if viewModel.singleTrack == nil {
-            alertMessage = "Please select the single version first."
+        if viewModel.sourceTrack == nil {
+            alertMessage = "Please select the source track first."
             showingAlert = true
             return
         }
         
-        if viewModel.albumTrack == nil {
-            alertMessage = "Please select the album version first."
+        if viewModel.targetTrack == nil {
+            alertMessage = "Please select the target track first."
             showingAlert = true
             return
         }
         
         if viewModel.isSameSong {
-            alertMessage = "You've selected the same song for both versions. Please choose different versions of the song."
+            alertMessage = "You've selected the same song for both source and target. Please choose different versions of the song."
             showingAlert = true
             return
         }
@@ -190,20 +198,20 @@ struct ContentView: View {
     }
     
     private func addPlayCount() {
-        if viewModel.singleTrack == nil {
-            alertMessage = "Please select the single version first."
+        if viewModel.sourceTrack == nil {
+            alertMessage = "Please select the source track first."
             showingAlert = true
             return
         }
         
-        if viewModel.albumTrack == nil {
-            alertMessage = "Please select the album version first."
+        if viewModel.targetTrack == nil {
+            alertMessage = "Please select the target track first."
             showingAlert = true
             return
         }
         
         if viewModel.isSameSong {
-            alertMessage = "You've selected the same song for both versions. Please choose different versions of the song."
+            alertMessage = "You've selected the same song for both source and target. Please choose different versions of the song."
             showingAlert = true
             return
         }
