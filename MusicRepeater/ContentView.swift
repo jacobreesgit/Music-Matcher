@@ -43,7 +43,7 @@ struct ContentView: View {
             // Main Title
             Text("Music Repeater")
                 .font(AppFont.largeTitle)
-                .foregroundColor(Color.appTextPrimary)
+                .foregroundColor(Color.designTextPrimary)
                 .padding(.top, AppSpacing.xxl)
             
             VStack(spacing: AppSpacing.medium) {
@@ -108,7 +108,7 @@ struct ContentView: View {
             .appPadding(.horizontal)
             .padding(.bottom, AppSpacing.xl)
         }
-        .background(Color.appBackground)
+        .background(Color.designBackground)
         .sheet(isPresented: $showingSinglePicker) {
             MediaPickerView(onSelection: { item in
                 viewModel.selectSingleTrack(item)
@@ -160,7 +160,7 @@ struct ContentView: View {
                 )
             }
         }
-        .background(Color.appBackground)
+        .background(Color.designBackground)
     }
     
     private func checkMusicLibraryPermission() {

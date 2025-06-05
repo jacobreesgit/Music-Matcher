@@ -1,4 +1,16 @@
-import SwiftUI
+HStack {
+                                Image(systemName: "music.note.list")
+                                    .font(AppFont.title2)
+                                    .foregroundColor(Color.designPrimary)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Music Repeater")
+                                        .font(AppFont.headline)
+                                        .foregroundColor(Color.designTextPrimary)
+                                    
+                                    Text("Version 1.0")
+                                        .font(AppFont.caption)
+                                import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var settingsManager = SettingsManager.shared
@@ -13,20 +25,20 @@ struct SettingsView: View {
                             HStack {
                                 Text("Use System Music Player")
                                     .font(AppFont.body)
-                                    .foregroundColor(Color.appTextPrimary)
+                                    .foregroundColor(Color.designTextPrimary)
                                 
                                 Spacer()
                                 
                                 Toggle("", isOn: $settingsManager.useSystemMusicPlayer)
                                     .labelsHidden()
-                                    .accentColor(Color.appPrimary)
+                                    .accentColor(Color.designPrimary)
                             }
                             
                             Text(settingsManager.useSystemMusicPlayer ?
                                  "Will replace currently playing music" :
                                  "Won't interfere with currently playing music")
                                 .font(AppFont.caption)
-                                .foregroundColor(Color.appTextSecondary)
+                                .foregroundColor(Color.designTextSecondary)
                         }
                         .appPadding()
                     }
@@ -51,7 +63,7 @@ struct SettingsView: View {
                                     
                                     Text("Version 1.0")
                                         .font(AppFont.caption)
-                                        .foregroundColor(Color.appTextSecondary)
+                                        .foregroundColor(Color.designTextSecondary)
                                 }
                                 
                                 Spacer()
@@ -60,14 +72,14 @@ struct SettingsView: View {
                             // Description
                             Text("Synchronize play counts between different versions of the same song.")
                                 .font(AppFont.body)
-                                .foregroundColor(Color.appTextSecondary)
+                                .foregroundColor(Color.designTextSecondary)
                             
                             // Features Section
                             VStack(alignment: .leading, spacing: AppSpacing.small) {
                                 Text("Features:")
                                     .font(AppFont.subheadline)
                                     .fontWeight(.medium)
-                                    .foregroundColor(Color.appTextPrimary)
+                                    .foregroundColor(Color.designTextPrimary)
                                 
                                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                                     AppFeatureRow("Match play counts between single and album versions")
@@ -80,7 +92,7 @@ struct SettingsView: View {
                             // Footer
                             Text("Made with ♥ for music lovers")
                                 .font(AppFont.caption)
-                                .foregroundColor(Color.appTextSecondary)
+                                .foregroundColor(Color.designTextSecondary)
                                 .italic()
                                 .padding(.top, AppSpacing.small)
                         }
@@ -89,19 +101,19 @@ struct SettingsView: View {
                     .listRowInsets(EdgeInsets())
                 }
             }
-            .background(Color.appBackground)
+            .background(Color.designBackground)
             .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
         }
-        .accentColor(Color.appPrimary)
+        .accentColor(Color.designPrimary)
     }
     
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(AppFont.subheadline)
             .fontWeight(.medium)
-            .foregroundColor(Color.appTextSecondary)
+            .foregroundColor(Color.designTextSecondary)
             .textCase(.none)
     }
 }

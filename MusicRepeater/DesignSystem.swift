@@ -9,38 +9,38 @@ import Foundation
 extension Color {
     // MARK: Primary Colors
     /// Main brand color used for primary actions and accents
-    static let appPrimary = Color("AppPrimary") // Blue theme color
-    static let appPrimaryDark = Color("AppPrimaryDark") // Darker blue for pressed states
+    static let designPrimary = Color("AppPrimary") // Blue theme color
+    static let designPrimaryDark = Color("AppPrimaryDark") // Darker blue for pressed states
     
     // MARK: Secondary Colors
     /// Secondary action color, typically green for positive actions
-    static let appSecondary = Color("AppSecondary") // Green for "Add" actions
-    static let appSecondaryDark = Color("AppSecondaryDark") // Darker green for pressed states
+    static let designSecondary = Color("AppSecondary") // Green for "Add" actions
+    static let designSecondaryDark = Color("AppSecondaryDark") // Darker green for pressed states
     
     // MARK: Semantic Colors
     /// Success state color
-    static let appSuccess = Color("AppSuccess") // Green for success messages
+    static let designSuccess = Color("AppSuccess") // Green for success messages
     /// Warning state color
-    static let appWarning = Color("AppWarning") // Orange for warnings
+    static let designWarning = Color("AppWarning") // Orange for warnings
     /// Error state color
-    static let appError = Color("AppError") // Red for errors and stop actions
+    static let designError = Color("AppError") // Red for errors and stop actions
     /// Info state color
-    static let appInfo = Color("AppInfo") // Light blue for informational content
+    static let designInfo = Color("AppInfo") // Light blue for informational content
     
     // MARK: Neutral Colors
     /// Primary text color that adapts to light/dark mode
-    static let appTextPrimary = Color("AppTextPrimary")
+    static let designTextPrimary = Color("AppTextPrimary")
     /// Secondary text color for subtitles and captions
-    static let appTextSecondary = Color("AppTextSecondary")
+    static let designTextSecondary = Color("AppTextSecondary")
     /// Tertiary text color for disabled states
-    static let appTextTertiary = Color("AppTextTertiary")
+    static let designTextTertiary = Color("AppTextTertiary")
     
     /// Primary background color
-    static let appBackground = Color("AppBackground")
+    static let designBackground = Color("AppBackground")
     /// Secondary background for cards and elevated surfaces
-    static let appBackgroundSecondary = Color("AppBackgroundSecondary")
+    static let designBackgroundSecondary = Color("AppBackgroundSecondary")
     /// Tertiary background for input fields and inactive areas
-    static let appBackgroundTertiary = Color("AppBackgroundTertiary")
+    static let designBackgroundTertiary = Color("AppBackgroundTertiary")
     
     // MARK: Component-Specific Colors
     /// Card background with subtle transparency
@@ -195,7 +195,7 @@ struct AppPrimaryButton: View {
             .padding(AppSpacing.medium)
             .background(
                 RoundedRectangle(cornerRadius: AppCornerRadius.large)
-                    .fill(isEnabled ? Color.appPrimary : Color.appTextTertiary)
+                    .fill(isEnabled ? Color.designPrimary : Color.designTextTertiary)
             )
         }
         .disabled(!isEnabled)
@@ -234,7 +234,7 @@ struct AppSecondaryButton: View {
             .padding(AppSpacing.medium)
             .background(
                 RoundedRectangle(cornerRadius: AppCornerRadius.large)
-                    .fill(isEnabled ? Color.appSecondary : Color.appTextTertiary)
+                    .fill(isEnabled ? Color.designSecondary : Color.designTextTertiary)
             )
         }
         .disabled(!isEnabled)
@@ -262,18 +262,18 @@ struct AppSelectionButton: View {
             HStack {
                 Image(systemName: icon)
                     .font(AppFont.iconMedium)
-                    .foregroundColor(Color.appPrimary)
+                    .foregroundColor(Color.designPrimary)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(AppFont.body)
-                        .foregroundColor(Color.appTextPrimary)
+                        .foregroundColor(Color.designTextPrimary)
                         .lineLimit(1)
                     
                     if let subtitle = subtitle {
                         Text(subtitle)
                             .font(AppFont.subheadline)
-                            .foregroundColor(Color.appTextSecondary)
+                            .foregroundColor(Color.designTextSecondary)
                     }
                 }
                 
@@ -303,7 +303,7 @@ struct AppCard<Content: View>: View {
             .padding(padding)
             .background(
                 RoundedRectangle(cornerRadius: AppCornerRadius.medium)
-                    .fill(Color.appBackgroundSecondary)
+                    .fill(Color.designBackgroundSecondary)
                     .appShadow(.light)
             )
     }
@@ -322,12 +322,12 @@ struct AppWarningBanner: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(Color.appWarning)
+                .foregroundColor(Color.designWarning)
                 .font(AppFont.iconMedium)
             
             Text(message)
                 .font(AppFont.subheadline)
-                .foregroundColor(Color.appWarning)
+                .foregroundColor(Color.designWarning)
                 .multilineTextAlignment(.leading)
             
             Spacer()
@@ -335,7 +335,7 @@ struct AppWarningBanner: View {
         .padding(AppSpacing.medium)
         .background(
             RoundedRectangle(cornerRadius: AppCornerRadius.medium)
-                .fill(Color.appWarning.opacity(0.1))
+                .fill(Color.designWarning.opacity(0.1))
         )
     }
 }
@@ -358,13 +358,13 @@ struct AppProgressRing: View {
         ZStack {
             // Background ring
             Circle()
-                .stroke(Color.appPrimary.opacity(0.3), lineWidth: lineWidth)
+                .stroke(Color.designPrimary.opacity(0.3), lineWidth: lineWidth)
             
             // Progress ring
             Circle()
                 .trim(from: 0, to: animatedProgress)
                 .stroke(
-                    Color.appPrimary,
+                    Color.designPrimary,
                     style: StrokeStyle(
                         lineWidth: lineWidth,
                         lineCap: .round
@@ -377,7 +377,7 @@ struct AppProgressRing: View {
             Circle()
                 .trim(from: 0, to: animatedProgress)
                 .stroke(
-                    Color.appPrimary.opacity(0.3),
+                    Color.designPrimary.opacity(0.3),
                     style: StrokeStyle(
                         lineWidth: lineWidth + 4,
                         lineCap: .round
@@ -406,7 +406,7 @@ struct AppControlButton: View {
     let size: CGFloat
     let action: () -> Void
     
-    init(icon: String, color: Color = Color.appPrimary, size: CGFloat = 60, action: @escaping () -> Void) {
+    init(icon: String, color: Color = Color.designPrimary, size: CGFloat = 60, action: @escaping () -> Void) {
         self.icon = icon
         self.color = color
         self.size = size
@@ -438,12 +438,12 @@ struct AppSectionHeader: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(title)
                 .font(AppFont.headline)
-                .foregroundColor(Color.appTextPrimary)
+                .foregroundColor(Color.designTextPrimary)
             
             if let subtitle = subtitle {
                 Text(subtitle)
                     .font(AppFont.subheadline)
-                    .foregroundColor(Color.appTextSecondary)
+                    .foregroundColor(Color.designTextSecondary)
             }
         }
     }
@@ -455,7 +455,7 @@ struct AppInfoRow: View {
     let value: String
     let valueColor: Color
     
-    init(_ label: String, value: String, valueColor: Color = Color.appTextPrimary) {
+    init(_ label: String, value: String, valueColor: Color = Color.designTextPrimary) {
         self.label = label
         self.value = value
         self.valueColor = valueColor
@@ -465,7 +465,7 @@ struct AppInfoRow: View {
         HStack {
             Text(label)
                 .font(AppFont.subheadline)
-                .foregroundColor(Color.appTextSecondary)
+                .foregroundColor(Color.designTextSecondary)
             
             Spacer()
             
@@ -482,7 +482,7 @@ struct AppFeatureRow: View {
     let text: String
     let bulletColor: Color
     
-    init(_ text: String, bulletColor: Color = Color.appPrimary) {
+    init(_ text: String, bulletColor: Color = Color.designPrimary) {
         self.text = text
         self.bulletColor = bulletColor
     }
@@ -496,7 +496,7 @@ struct AppFeatureRow: View {
             
             Text(text)
                 .font(AppFont.subheadline)
-                .foregroundColor(Color.appTextSecondary)
+                .foregroundColor(Color.designTextSecondary)
             
             Spacer()
         }
@@ -538,18 +538,18 @@ struct AppPermissionScreen: View {
             // Icon
             Image(systemName: icon)
                 .font(.system(size: 80))
-                .foregroundColor(Color.appPrimary)
+                .foregroundColor(Color.designPrimary)
             
             // Title and Description
             VStack(spacing: AppSpacing.medium) {
                 Text(title)
                     .font(AppFont.title)
-                    .foregroundColor(Color.appTextPrimary)
+                    .foregroundColor(Color.designTextPrimary)
                 
                 Text(description)
                     .font(AppFont.body)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(Color.appTextSecondary)
+                    .foregroundColor(Color.designTextSecondary)
                     .padding(.horizontal, AppSpacing.xl)
             }
             
@@ -562,7 +562,7 @@ struct AppPermissionScreen: View {
                     .padding(AppSpacing.medium)
                     .background(
                         RoundedRectangle(cornerRadius: AppCornerRadius.large)
-                            .fill(isButtonDestructive ? Color.appError : Color.appPrimary)
+                            .fill(isButtonDestructive ? Color.designError : Color.designPrimary)
                     )
             }
             .padding(.horizontal, AppSpacing.xxl)
@@ -572,7 +572,7 @@ struct AppPermissionScreen: View {
                 Text(statusMessage)
                     .font(AppFont.caption)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(Color.appTextSecondary)
+                    .foregroundColor(Color.designTextSecondary)
                     .padding(.horizontal, AppSpacing.large)
             }
             
@@ -595,7 +595,7 @@ struct AppCardStyle: ViewModifier {
         content
             .background(
                 RoundedRectangle(cornerRadius: AppCornerRadius.medium)
-                    .fill(Color.appBackgroundSecondary)
+                    .fill(Color.designBackgroundSecondary)
                     .appShadow(isElevated ? .medium : .light)
             )
     }

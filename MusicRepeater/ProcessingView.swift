@@ -13,17 +13,17 @@ struct ProcessingView: View {
                 VStack(spacing: AppSpacing.medium) {
                     Text("Processing")
                         .font(AppFont.largeTitle)
-                        .foregroundColor(Color.appTextPrimary)
+                        .foregroundColor(Color.designTextPrimary)
                     
                     Text(viewModel.albumTrackName)
                         .font(AppFont.title2)
-                        .foregroundColor(Color.appTextPrimary)
+                        .foregroundColor(Color.designTextPrimary)
                         .multilineTextAlignment(.center)
                         .appPadding(.horizontal)
                     
                     Text("Building up play count...")
                         .font(AppFont.subheadline)
-                        .foregroundColor(Color.appTextSecondary)
+                        .foregroundColor(Color.designTextSecondary)
                 }
                 
                 // Animated Progress Ring
@@ -38,15 +38,15 @@ struct ProcessingView: View {
                     VStack(spacing: AppSpacing.small) {
                         Text("\(viewModel.currentIteration)")
                             .font(AppFont.counterLarge)
-                            .foregroundColor(Color.appTextPrimary)
+                            .foregroundColor(Color.designTextPrimary)
                         
                         Text("of \(viewModel.totalIterations)")
                             .font(AppFont.headline)
-                            .foregroundColor(Color.appTextSecondary)
+                            .foregroundColor(Color.designTextSecondary)
                         
                         Text("plays")
                             .font(AppFont.subheadline)
-                            .foregroundColor(Color.appTextSecondary)
+                            .foregroundColor(Color.designTextSecondary)
                     }
                 }
                 
@@ -61,7 +61,7 @@ struct ProcessingView: View {
                         AppInfoRow(
                             "Target:",
                             value: "\(viewModel.getTargetPlayCount())",
-                            valueColor: Color.appPrimary
+                            valueColor: Color.designPrimary
                         )
                     }
                 }
@@ -75,7 +75,7 @@ struct ProcessingView: View {
                         // Play/Pause Button
                         AppControlButton(
                             icon: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill",
-                            color: Color.appPrimary,
+                            color: Color.designPrimary,
                             size: 60
                         ) {
                             viewModel.togglePlayback()
@@ -84,7 +84,7 @@ struct ProcessingView: View {
                         // Stop Button
                         AppControlButton(
                             icon: "stop.circle.fill",
-                            color: Color.appError,
+                            color: Color.designError,
                             size: 60
                         ) {
                             viewModel.stopProcessing()
@@ -96,17 +96,17 @@ struct ProcessingView: View {
                     HStack(spacing: 70) {
                         Text(viewModel.isPlaying ? "Pause" : "Resume")
                             .font(AppFont.caption)
-                            .foregroundColor(Color.appTextSecondary)
+                            .foregroundColor(Color.designTextSecondary)
                         
                         Text("Stop")
                             .font(AppFont.caption)
-                            .foregroundColor(Color.appTextSecondary)
+                            .foregroundColor(Color.designTextSecondary)
                     }
                 }
                 
                 Spacer()
             }
-            .background(Color.appBackground)
+            .background(Color.designBackground)
             .navigationBarHidden(true)
             .onDisappear {
                 // Don't stop processing when view disappears unless explicitly stopped

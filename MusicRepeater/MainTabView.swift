@@ -19,8 +19,8 @@ struct MainTabView: View {
                         .font(AppFont.caption)
                 }
         }
-        .accentColor(Color.appPrimary)
-        .background(Color.appBackground)
+        .accentColor(Color.designPrimary)
+        .background(Color.designBackground)
     }
 }
 
