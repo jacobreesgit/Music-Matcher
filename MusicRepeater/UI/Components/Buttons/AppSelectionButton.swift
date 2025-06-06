@@ -101,7 +101,7 @@ struct AppSelectionButton: View {
             if let album = track.albumTitle {
                 Text(album)
                     .font(AppFont.caption)
-                    .foregroundColor(Color.designTextTertiary)
+                    .foregroundColor(Color.designTextSecondary)
                     .lineLimit(1)
             }
             
@@ -168,6 +168,9 @@ struct ArtworkView: View {
             }
         }
         .onAppear {
+            loadArtwork()
+        }
+        .onChange(of: artwork) { _, _ in
             loadArtwork()
         }
     }

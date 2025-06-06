@@ -1,4 +1,5 @@
 import SwiftUI
+import MediaPlayer
 
 struct ProcessingView: View {
     @ObservedObject var viewModel: MusicRepeaterViewModel
@@ -205,3 +206,82 @@ struct ProcessingView: View {
         }
     }
 }
+
+#if DEBUG
+// Mock ViewModel for Previews
+class MockMusicRepeaterViewModel: MusicRepeaterViewModel {
+    
+    override init() {
+        super.init()
+        self.targetTrackName = "Bohemian Rhapsody (Remastered) - Queen"
+        self.targetPlayCount = 25
+        self.isProcessing = true
+        self.showingProcessingView = true
+    }
+    
+    convenience init(scenario: ProcessingScenario) {
+        self.init()
+        
+        switch scenario {
+        case .justStarted:
+            self.currentIteration = 1
+            self.totalIterations = 20
+            self.isPlaying = true
+            
+        case .midProgress:
+            self.currentIteration = 8
+            self.totalIterations = 20
+            self.isPlaying = true
+            
+        case .almostComplete:
+            self.currentIteration = 18
+            self.totalIterations = 20
+            self.isPlaying = true
+            
+        case .paused:
+            self.currentIteration = 12
+            self.totalIterations = 20
+            self.isPlaying = false
+            
+        case .largeNumber:
+            self.currentIteration = 47
+            self.totalIterations = 125
+            self.isPlaying = true
+        }
+    }
+}
+
+enum ProcessingScenario {
+    case justStarted
+    case midProgress
+    case almostComplete
+    case paused
+    case largeNumber
+}
+
+struct ProcessingView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            // Just started processing
+            ProcessingView(viewModel: MockMusicRepeaterViewModel(scenario: .justStarted))
+                .previewDisplayName("Just Started (1/20)")
+            
+            // Mid progress
+            ProcessingView(viewModel: MockMusicRepeaterViewModel(scenario: .midProgress))
+                .previewDisplayName("Mid Progress (8/20)")
+            
+            // Almost complete
+            ProcessingView(viewModel: MockMusicRepeaterViewModel(scenario: .almostComplete))
+                .previewDisplayName("Almost Complete (18/20)")
+            
+            // Paused state
+            ProcessingView(viewModel: MockMusicRepeaterViewModel(scenario: .paused))
+                .previewDisplayName("Paused (12/20)")
+            
+            // Large numbers
+            ProcessingView(viewModel: MockMusicRepeaterViewModel(scenario: .largeNumber))
+                .previewDisplayName("Large Numbers (47/125)")
+        }
+    }
+}
+#endif
