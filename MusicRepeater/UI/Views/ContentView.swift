@@ -76,29 +76,36 @@ struct ContentView: View {
                                 showingTargetPicker = true
                             }
                         }
+                    }
+                    .appPadding(.horizontal)
+                    
+                    // Warning Banners (all at same width level)
+                    VStack(spacing: AppSpacing.medium) {
+                        // Same Song Warning
+                        if viewModel.isSameSong {
+                            AppWarningBanner("Warning: You've selected the same song for both source and target.")
+                        }
                         
-                        // Track Comparison Section or Warning (when both tracks are selected)
+                        // Play Count Warnings
                         if let sourceTrack = viewModel.sourceTrack,
-                           let targetTrack = viewModel.targetTrack {
-                            if sourceTrack.playCount <= targetTrack.playCount {
-                                // Show warning when source has equal or fewer plays than target
-                                let warningMessage = sourceTrack.playCount == targetTrack.playCount ?
-                                    "Both tracks have the same play count (\(sourceTrack.playCount)). No additional plays are needed." :
-                                    "Source track has fewer plays (\(sourceTrack.playCount)) than target track (\(targetTrack.playCount)). Consider swapping the tracks or selecting a different source."
-                                
-                                AppWarningBanner(warningMessage, icon: "exclamationmark.triangle.fill")
-                                    .appPadding(.horizontal)
-                            } else {
-                                // Show comparison only when source has more plays than target
-                                trackComparisonSection(source: sourceTrack, target: targetTrack)
+                           let targetTrack = viewModel.targetTrack,
+                           !viewModel.isSameSong {
+                            
+                            if sourceTrack.playCount == targetTrack.playCount {
+                                AppWarningBanner("Both tracks have the same play count (\(sourceTrack.playCount)). No additional plays are needed.", icon: "exclamationmark.triangle.fill")
+                            } else if sourceTrack.playCount < targetTrack.playCount {
+                                AppWarningBanner("Source track has fewer plays (\(sourceTrack.playCount)) than target track (\(targetTrack.playCount)). Consider swapping the tracks or selecting a different source.", icon: "exclamationmark.triangle.fill")
                             }
                         }
                     }
                     .appPadding(.horizontal)
                     
-                    // Same Song Warning
-                    if viewModel.isSameSong {
-                        AppWarningBanner("Warning: You've selected the same song for both source and target.")
+                    // Track Comparison Section (only show when source has more plays than target)
+                    if let sourceTrack = viewModel.sourceTrack,
+                       let targetTrack = viewModel.targetTrack,
+                       !viewModel.isSameSong,
+                       sourceTrack.playCount > targetTrack.playCount {
+                        trackComparisonSection(source: sourceTrack, target: targetTrack)
                             .appPadding(.horizontal)
                     }
                     
@@ -156,19 +163,9 @@ struct ContentView: View {
                             .foregroundColor(Color.designTextSecondary)
                         
                         let difference = source.playCount - target.playCount
-                        if difference > 0 {
-                            Text("+\(difference)")
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designSecondary)
-                        } else if difference < 0 {
-                            Text("\(difference)")
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designError)
-                        } else {
-                            Text("Equal")
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designSuccess)
-                        }
+                        Text("+\(difference)")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.designSecondary)
                     }
                     
                     // Target track mini info
