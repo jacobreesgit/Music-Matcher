@@ -9,21 +9,74 @@ struct ProcessingView: View {
             VStack(spacing: AppSpacing.xl) {
                 Spacer()
                 
-                // Track Info Section
-                VStack(spacing: AppSpacing.medium) {
+                // Track Info Section with Artwork
+                VStack(spacing: AppSpacing.large) {
                     Text("Processing")
                         .font(AppFont.largeTitle)
                         .foregroundColor(Color.designTextPrimary)
                     
-                    Text(viewModel.targetTrackName)
-                        .font(AppFont.title2)
-                        .foregroundColor(Color.designTextPrimary)
-                        .multilineTextAlignment(.center)
-                        .appPadding(.horizontal)
-                    
-                    Text("Building up play count...")
-                        .font(AppFont.subheadline)
-                        .foregroundColor(Color.designTextSecondary)
+                    // Album Artwork (if available)
+                    if let targetTrack = viewModel.targetTrack {
+                        VStack(spacing: AppSpacing.medium) {
+                            // Large album artwork
+                            Group {
+                                if let artwork = targetTrack.artwork {
+                                    ArtworkView(artwork: artwork)
+                                } else {
+                                    RoundedRectangle(cornerRadius: AppCornerRadius.large)
+                                        .fill(Color.designBackgroundTertiary)
+                                        .overlay(
+                                            Image(systemName: "music.note")
+                                                .font(.system(size: 60))
+                                                .foregroundColor(Color.designPrimary)
+                                        )
+                                }
+                            }
+                            .frame(width: 160, height: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large))
+                            .appShadow(.medium)
+                            
+                            // Track Details
+                            VStack(spacing: AppSpacing.small) {
+                                Text(targetTrack.title ?? "Unknown Track")
+                                    .font(AppFont.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(Color.designTextPrimary)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                                
+                                if let artist = targetTrack.artist {
+                                    Text(artist)
+                                        .font(AppFont.headline)
+                                        .foregroundColor(Color.designTextSecondary)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(1)
+                                }
+                                
+                                if let album = targetTrack.albumTitle {
+                                    Text(album)
+                                        .font(AppFont.subheadline)
+                                        .foregroundColor(Color.designTextTertiary)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .appPadding(.horizontal)
+                        }
+                    } else {
+                        // Fallback if no track info
+                        VStack(spacing: AppSpacing.medium) {
+                            Text(viewModel.targetTrackName)
+                                .font(AppFont.title2)
+                                .foregroundColor(Color.designTextPrimary)
+                                .multilineTextAlignment(.center)
+                                .appPadding(.horizontal)
+                            
+                            Text("Building up play count...")
+                                .font(AppFont.subheadline)
+                                .foregroundColor(Color.designTextSecondary)
+                        }
+                    }
                 }
                 
                 // Animated Progress Ring
@@ -50,7 +103,7 @@ struct ProcessingView: View {
                     }
                 }
                 
-                // Progress Details
+                // Progress Details Card
                 AppCard(padding: AppSpacing.medium) {
                     VStack(spacing: AppSpacing.small) {
                         AppInfoRow(
@@ -63,6 +116,29 @@ struct ProcessingView: View {
                             value: "\(viewModel.getTargetPlayCount())",
                             valueColor: Color.designPrimary
                         )
+                        
+                        // Progress percentage
+                        let progressPercentage = viewModel.totalIterations > 0 ?
+                            Int((Double(viewModel.currentIteration) / Double(viewModel.totalIterations)) * 100) : 0
+                        
+                        AppInfoRow(
+                            "Progress:",
+                            value: "\(progressPercentage)%",
+                            valueColor: Color.designSecondary
+                        )
+                        
+                        // Time remaining estimate (if available)
+                        if viewModel.currentIteration > 0 && viewModel.isProcessing {
+                            let timePerIteration: Double = 33.0 // Approximate time per iteration in seconds
+                            let remainingIterations = viewModel.totalIterations - viewModel.currentIteration
+                            let estimatedSecondsRemaining = Double(remainingIterations) * timePerIteration
+                            
+                            AppInfoRow(
+                                "Est. Time Remaining:",
+                                value: formatTimeRemaining(estimatedSecondsRemaining),
+                                valueColor: Color.designInfo
+                            )
+                        }
                     }
                 }
                 .appPadding(.horizontal)
@@ -114,28 +190,18 @@ struct ProcessingView: View {
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
-}
-
-#if DEBUG
-struct ProcessingView_Previews: PreviewProvider {
-    static var previews: some View {
-        // Create a mock view model for preview
-        let viewModel = MusicRepeaterViewModel()
-        // Set some mock data
-        // viewModel.targetTrackName = "Sample Song - Artist Name"
-        // viewModel.currentIteration = 5
-        // viewModel.totalIterations = 20
-        // viewModel.targetPlayCount = 10
-        
-        return Group {
-            ProcessingView(viewModel: viewModel)
-                .preferredColorScheme(.light)
-                .previewDisplayName("Light Mode")
-            
-            ProcessingView(viewModel: viewModel)
-                .preferredColorScheme(.dark)
-                .previewDisplayName("Dark Mode")
+    
+    private func formatTimeRemaining(_ seconds: Double) -> String {
+        if seconds < 60 {
+            return "\(Int(seconds))s"
+        } else if seconds < 3600 {
+            let minutes = Int(seconds) / 60
+            let remainingSeconds = Int(seconds) % 60
+            return "\(minutes)m \(remainingSeconds)s"
+        } else {
+            let hours = Int(seconds) / 3600
+            let minutes = (Int(seconds) % 3600) / 60
+            return "\(hours)h \(minutes)m"
         }
     }
 }
-#endif

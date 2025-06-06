@@ -46,17 +46,18 @@ struct ContentView: View {
                     Text("Music Repeater")
                         .font(AppFont.largeTitle)
                         .foregroundColor(Color.designTextPrimary)
-                        .padding(.top, AppSpacing.xxl)
+                        .padding(.top, AppSpacing.xl)
                     
-                    VStack(spacing: AppSpacing.medium) {
+                    VStack(spacing: AppSpacing.large) {
                         // Source Track Section
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             AppSectionHeader("Source Track", subtitle: "Track to copy play count from")
                             
-                            AppSelectionButton(
+                            EnhancedTrackSelectionButton(
+                                track: viewModel.sourceTrack,
                                 icon: "music.note",
-                                title: viewModel.sourceTrackName.isEmpty ? "Choose Source Track" : viewModel.sourceTrackName,
-                                subtitle: viewModel.sourceTrackName.isEmpty ? nil : "Play Count: \(viewModel.sourcePlayCount)"
+                                placeholderTitle: "Choose Source Track",
+                                placeholderSubtitle: "Tap to select from your music library"
                             ) {
                                 showingSourcePicker = true
                             }
@@ -66,13 +67,20 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             AppSectionHeader("Target Track", subtitle: "Track to update play count for")
                             
-                            AppSelectionButton(
+                            EnhancedTrackSelectionButton(
+                                track: viewModel.targetTrack,
                                 icon: "music.note.list",
-                                title: viewModel.targetTrackName.isEmpty ? "Choose Target Track" : viewModel.targetTrackName,
-                                subtitle: viewModel.targetTrackName.isEmpty ? nil : "Play Count: \(viewModel.targetPlayCount)"
+                                placeholderTitle: "Choose Target Track",
+                                placeholderSubtitle: "Tap to select from your music library"
                             ) {
                                 showingTargetPicker = true
                             }
+                        }
+                        
+                        // Track Comparison Section (when both tracks are selected)
+                        if let sourceTrack = viewModel.sourceTrack,
+                           let targetTrack = viewModel.targetTrack {
+                            trackComparisonSection(source: sourceTrack, target: targetTrack)
                         }
                     }
                     .appPadding(.horizontal)
@@ -84,39 +92,14 @@ struct ContentView: View {
                     }
                     
                     // Add bottom spacing for safe area
-                    Spacer(minLength: 120)
+                    Spacer(minLength: 140)
                 }
             }
             
             // Fixed Action Buttons at bottom
-            VStack(spacing: AppSpacing.small) {
-                HStack(spacing: AppSpacing.medium) {
-                    // Match Play Count Button
-                    AppPrimaryButton(
-                        "Match",
-                        subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
-                            "\(viewModel.targetPlayCount) → \(viewModel.sourcePlayCount)" : "Make Equal",
-                        isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
-                    ) {
-                        matchPlayCount()
-                    }
-                    
-                    // Add Play Count Button
-                    AppSecondaryButton(
-                        "Add",
-                        subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
-                            "\(viewModel.targetPlayCount) → \(viewModel.targetPlayCount + viewModel.sourcePlayCount)" : "Add Together",
-                        isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
-                    ) {
-                        addPlayCount()
-                    }
-                }
-                .appPadding(.horizontal)
-            }
-            .padding(.bottom, AppSpacing.medium)
-            .background(Color(UIColor.systemGroupedBackground))
+            actionButtonsSection
         }
-        .background(Color(UIColor.systemGroupedBackground))
+        .background(Color.designBackground)
         .sheet(isPresented: $showingSourcePicker) {
             MediaPickerView(onSelection: { item in
                 viewModel.selectSourceTrack(item)
@@ -130,6 +113,135 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $viewModel.showingProcessingView) {
             ProcessingView(viewModel: viewModel)
         }
+    }
+    
+    @ViewBuilder
+    private func trackComparisonSection(source: MPMediaItem, target: MPMediaItem) -> some View {
+        AppCard {
+            VStack(spacing: AppSpacing.medium) {
+                AppSectionHeader("Play Count Comparison")
+                
+                HStack(spacing: AppSpacing.medium) {
+                    // Source track mini info
+                    VStack(spacing: AppSpacing.small) {
+                        Text("Source")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.designTextSecondary)
+                        
+                        Text("\(source.playCount)")
+                            .font(AppFont.counterMedium)
+                            .foregroundColor(Color.designPrimary)
+                        
+                        Text("plays")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.designTextSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    // Arrow and difference
+                    VStack(spacing: 4) {
+                        Image(systemName: "arrow.right")
+                            .font(AppFont.iconMedium)
+                            .foregroundColor(Color.designTextSecondary)
+                        
+                        let difference = source.playCount - target.playCount
+                        if difference > 0 {
+                            Text("+\(difference)")
+                                .font(AppFont.caption)
+                                .foregroundColor(Color.designSecondary)
+                        } else if difference < 0 {
+                            Text("\(difference)")
+                                .font(AppFont.caption)
+                                .foregroundColor(Color.designError)
+                        } else {
+                            Text("Equal")
+                                .font(AppFont.caption)
+                                .foregroundColor(Color.designSuccess)
+                        }
+                    }
+                    
+                    // Target track mini info
+                    VStack(spacing: AppSpacing.small) {
+                        Text("Target")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.designTextSecondary)
+                        
+                        Text("\(target.playCount)")
+                            .font(AppFont.counterMedium)
+                            .foregroundColor(Color.designSecondary)
+                        
+                        Text("plays")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.designTextSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                
+                // Action Previews
+                Divider()
+                    .background(Color.designTextTertiary)
+                
+                VStack(spacing: AppSpacing.small) {
+                    HStack {
+                        Text("Match:")
+                            .font(AppFont.subheadline)
+                            .foregroundColor(Color.designTextSecondary)
+                        
+                        Spacer()
+                        
+                        Text("\(target.playCount) → \(source.playCount)")
+                            .font(AppFont.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(Color.designPrimary)
+                    }
+                    
+                    HStack {
+                        Text("Add:")
+                            .font(AppFont.subheadline)
+                            .foregroundColor(Color.designTextSecondary)
+                        
+                        Spacer()
+                        
+                        Text("\(target.playCount) → \(target.playCount + source.playCount)")
+                            .font(AppFont.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(Color.designSecondary)
+                    }
+                }
+            }
+        }
+    }
+    
+    private var actionButtonsSection: some View {
+        VStack(spacing: AppSpacing.small) {
+            HStack(spacing: AppSpacing.medium) {
+                // Match Play Count Button
+                AppPrimaryButton(
+                    "Match",
+                    subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
+                        "\(viewModel.targetPlayCount) → \(viewModel.sourcePlayCount)" : "Make Equal",
+                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
+                ) {
+                    matchPlayCount()
+                }
+                
+                // Add Play Count Button
+                AppSecondaryButton(
+                    "Add",
+                    subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
+                        "\(viewModel.targetPlayCount) → \(viewModel.targetPlayCount + viewModel.sourcePlayCount)" : "Add Together",
+                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
+                ) {
+                    addPlayCount()
+                }
+            }
+            .appPadding(.horizontal)
+        }
+        .padding(.bottom, AppSpacing.medium)
+        .background(
+            Color.designBackground
+                .ignoresSafeArea(edges: .bottom)
+        )
     }
     
     private var permissionRequestView: some View {

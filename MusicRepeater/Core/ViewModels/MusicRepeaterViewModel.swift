@@ -75,20 +75,22 @@ class MusicRepeaterViewModel: ObservableObject {
     
     func selectSourceTrack(_ item: MPMediaItem) {
         sourceTrack = item
-        sourceTrackName = item.title ?? "Unknown Track"
-        if let artist = item.artist {
-            sourceTrackName += " - \(artist)"
-        }
+        sourceTrackName = formatTrackName(item)
         sourcePlayCount = item.playCount
     }
     
     func selectTargetTrack(_ item: MPMediaItem) {
         targetTrack = item
-        targetTrackName = item.title ?? "Unknown Track"
-        if let artist = item.artist {
-            targetTrackName += " - \(artist)"
-        }
+        targetTrackName = formatTrackName(item)
         targetPlayCount = item.playCount
+    }
+    
+    private func formatTrackName(_ item: MPMediaItem) -> String {
+        var name = item.title ?? "Unknown Track"
+        if let artist = item.artist {
+            name += " - \(artist)"
+        }
+        return name
     }
     
     func getTargetPlayCount() -> Int {
