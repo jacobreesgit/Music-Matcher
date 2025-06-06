@@ -119,14 +119,14 @@ struct ContentView: View {
         }
         .background(Color.designBackground)
         .sheet(isPresented: $showingSourcePicker) {
-            MediaPickerView(onSelection: { item in
+            CustomMusicPickerView(title: "Select Source Track") { item in
                 viewModel.selectSourceTrack(item)
-            })
+            }
         }
         .sheet(isPresented: $showingTargetPicker) {
-            MediaPickerView(onSelection: { item in
+            CustomMusicPickerView(title: "Select Target Track") { item in
                 viewModel.selectTargetTrack(item)
-            })
+            }
         }
         .fullScreenCover(isPresented: $viewModel.showingProcessingView) {
             ProcessingView(viewModel: viewModel)
@@ -351,46 +351,6 @@ struct ContentView: View {
                     // Don't show additional alert since the UI already shows the status
                 }
             }
-        }
-    }
-}
-
-// MediaPicker wrapper for SwiftUI
-struct MediaPickerView: UIViewControllerRepresentable {
-    let onSelection: (MPMediaItem) -> Void
-    @Environment(\.presentationMode) var presentationMode
-    
-    func makeUIViewController(context: Context) -> MPMediaPickerController {
-        let picker = MPMediaPickerController(mediaTypes: .music)
-        picker.delegate = context.coordinator
-        picker.allowsPickingMultipleItems = false
-        picker.showsCloudItems = true
-        picker.showsItemsWithProtectedAssets = false
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: MPMediaPickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, MPMediaPickerControllerDelegate {
-        let parent: MediaPickerView
-        
-        init(_ parent: MediaPickerView) {
-            self.parent = parent
-        }
-        
-        func mediaPicker(_ mediaPicker: MPMediaPickerController, didPickMediaItems mediaItemCollection: MPMediaItemCollection) {
-            if let item = mediaItemCollection.items.first {
-                parent.onSelection(item)
-            }
-            parent.presentationMode.wrappedValue.dismiss()
-        }
-        
-        func mediaPickerDidCancel(_ mediaPicker: MPMediaPickerController) {
-            parent.presentationMode.wrappedValue.dismiss()
         }
     }
 }

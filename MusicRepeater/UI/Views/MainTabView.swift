@@ -78,6 +78,14 @@ struct MockContentView: View {
             mockActionButtons
         }
         .background(Color.designBackground)
+        .sheet(isPresented: $showingSourcePicker) {
+            // Mock sheet for preview
+            MockMusicPickerView(title: "Select Source Track")
+        }
+        .sheet(isPresented: $showingTargetPicker) {
+            // Mock sheet for preview
+            MockMusicPickerView(title: "Select Target Track")
+        }
     }
     
     @ViewBuilder
@@ -87,13 +95,17 @@ struct MockContentView: View {
                 icon: "music.note",
                 placeholderTitle: "Choose Source Track",
                 placeholderSubtitle: "Tap to select from your music library"
-            ) { }
+            ) {
+                showingSourcePicker = true
+            }
         } else {
             mockTrackButton(
                 icon: "music.note",
                 title: "Song Title - Artist Name",
                 subtitle: mockSourcePlayCount
-            )
+            ) {
+                showingSourcePicker = true
+            }
         }
     }
     
@@ -104,18 +116,22 @@ struct MockContentView: View {
                 icon: "music.note.list",
                 placeholderTitle: "Choose Target Track",
                 placeholderSubtitle: "Tap to select from your music library"
-            ) { }
+            ) {
+                showingTargetPicker = true
+            }
         } else {
             mockTrackButton(
                 icon: "music.note.list",
                 title: scenario == .sameSong ? "Song Title - Artist Name" : "Song Title (Album Version) - Artist Name",
                 subtitle: mockTargetPlayCount
-            )
+            ) {
+                showingTargetPicker = true
+            }
         }
     }
     
-    private func mockTrackButton(icon: String, title: String, subtitle: String) -> some View {
-        Button(action: {}) {
+    private func mockTrackButton(icon: String, title: String, subtitle: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             HStack(spacing: AppSpacing.medium) {
                 // Mock artwork
                 RoundedRectangle(cornerRadius: AppCornerRadius.small)
@@ -300,6 +316,39 @@ struct MockContentView: View {
         case .samePlayCount: return "30 plays"
         case .sameSong: return "35 plays"
         default: return "25 plays"
+        }
+    }
+}
+
+// Mock Music Picker for Previews
+struct MockMusicPickerView: View {
+    let title: String
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: AppSpacing.large) {
+                Text("Mock Music Library")
+                    .font(AppFont.title2)
+                    .foregroundColor(Color.designTextPrimary)
+                
+                Text("This is a preview placeholder")
+                    .font(AppFont.body)
+                    .foregroundColor(Color.designTextSecondary)
+                
+                Spacer()
+            }
+            .padding()
+            .background(Color.designBackground)
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
         }
     }
 }
