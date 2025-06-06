@@ -1,7 +1,7 @@
 import SwiftUI
 import MediaPlayer
 
-struct EnhancedTrackSelectionButton: View {
+struct AppSelectionButton: View {
     let track: MPMediaItem?
     let icon: String
     let placeholderTitle: String
@@ -146,25 +146,35 @@ struct EnhancedTrackSelectionButton: View {
     }
 }
 
-struct ArtworkView: UIViewRepresentable {
+struct ArtworkView: View {
     let artwork: MPMediaItemArtwork
+    @State private var uiImage: UIImage?
     
-    func makeUIView(context: Context) -> UIImageView {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
-        imageView.layer.cornerRadius = AppCornerRadius.small
-        return imageView
+    var body: some View {
+        Group {
+            if let uiImage = uiImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .background(Color.designBackgroundTertiary)
+            } else {
+                RoundedRectangle(cornerRadius: AppCornerRadius.small)
+                    .fill(Color.designBackgroundTertiary)
+                    .overlay(
+                        Image(systemName: "music.note")
+                            .font(AppFont.iconMedium)
+                            .foregroundColor(Color.designPrimary)
+                    )
+            }
+        }
+        .onAppear {
+            loadArtwork()
+        }
     }
     
-    func updateUIView(_ uiView: UIImageView, context: Context) {
-        // Get the artwork image at the appropriate size
+    private func loadArtwork() {
         let size = CGSize(width: 60, height: 60)
-        if let image = artwork.image(at: size) {
-            uiView.image = image
-        } else {
-            uiView.image = nil
-        }
+        uiImage = artwork.image(at: size)
     }
 }
 
@@ -273,9 +283,7 @@ struct TrackInfoCard: View {
                 }
                 
                 if let year = track.releaseDate {
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "yyyy"
-                    AppInfoRow("Year", value: formatter.string(from: year))
+                    AppInfoRow("Year", value: formatYear(from: year))
                 }
                 
                 if track.albumTrackNumber > 0 {
@@ -290,14 +298,20 @@ struct TrackInfoCard: View {
         let seconds = Int(duration) % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
+    
+    private func formatYear(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy"
+        return formatter.string(from: date)
+    }
 }
 
 #if DEBUG
-struct EnhancedTrackSelectionButton_Previews: PreviewProvider {
+struct AppSelectionButton_Previews: PreviewProvider {
     static var previews: some View {
         VStack(spacing: AppSpacing.large) {
             // Placeholder state
-            EnhancedTrackSelectionButton(
+            AppSelectionButton(
                 icon: "music.note",
                 placeholderTitle: "Choose Source Track",
                 placeholderSubtitle: "Tap to select from your music library"
@@ -305,7 +319,7 @@ struct EnhancedTrackSelectionButton_Previews: PreviewProvider {
             
             // Note: In a real preview, you'd need a mock MPMediaItem
             // This would show the selected track state with artwork
-            EnhancedTrackSelectionButton(
+            AppSelectionButton(
                 track: nil, // Would be actual MPMediaItem
                 icon: "music.note.list",
                 placeholderTitle: "Choose Target Track"

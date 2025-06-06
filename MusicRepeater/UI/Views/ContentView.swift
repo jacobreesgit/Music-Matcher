@@ -53,7 +53,7 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             AppSectionHeader("Source Track", subtitle: "Track to copy play count from")
                             
-                            EnhancedTrackSelectionButton(
+                            AppSelectionButton(
                                 track: viewModel.sourceTrack,
                                 icon: "music.note",
                                 placeholderTitle: "Choose Source Track",
@@ -67,7 +67,7 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             AppSectionHeader("Target Track", subtitle: "Track to update play count for")
                             
-                            EnhancedTrackSelectionButton(
+                            AppSelectionButton(
                                 track: viewModel.targetTrack,
                                 icon: "music.note.list",
                                 placeholderTitle: "Choose Target Track",
@@ -77,10 +77,21 @@ struct ContentView: View {
                             }
                         }
                         
-                        // Track Comparison Section (when both tracks are selected)
+                        // Track Comparison Section or Warning (when both tracks are selected)
                         if let sourceTrack = viewModel.sourceTrack,
                            let targetTrack = viewModel.targetTrack {
-                            trackComparisonSection(source: sourceTrack, target: targetTrack)
+                            if sourceTrack.playCount <= targetTrack.playCount {
+                                // Show warning when source has equal or fewer plays than target
+                                let warningMessage = sourceTrack.playCount == targetTrack.playCount ?
+                                    "Both tracks have the same play count (\(sourceTrack.playCount)). No additional plays are needed." :
+                                    "Source track has fewer plays (\(sourceTrack.playCount)) than target track (\(targetTrack.playCount)). Consider swapping the tracks or selecting a different source."
+                                
+                                AppWarningBanner(warningMessage, icon: "exclamationmark.triangle.fill")
+                                    .appPadding(.horizontal)
+                            } else {
+                                // Show comparison only when source has more plays than target
+                                trackComparisonSection(source: sourceTrack, target: targetTrack)
+                            }
                         }
                     }
                     .appPadding(.horizontal)
@@ -218,9 +229,7 @@ struct ContentView: View {
                 // Match Play Count Button
                 AppPrimaryButton(
                     "Match",
-                    subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
-                        "\(viewModel.targetPlayCount) → \(viewModel.sourcePlayCount)" : "Make Equal",
-                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
+                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing && !isSourceLessThanTarget
                 ) {
                     matchPlayCount()
                 }
@@ -228,9 +237,7 @@ struct ContentView: View {
                 // Add Play Count Button
                 AppSecondaryButton(
                     "Add",
-                    subtitle: viewModel.canMatchPlayCount && !viewModel.isSameSong ?
-                        "\(viewModel.targetPlayCount) → \(viewModel.targetPlayCount + viewModel.sourcePlayCount)" : "Add Together",
-                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing
+                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing && !isSourceLessThanTarget
                 ) {
                     addPlayCount()
                 }
@@ -242,6 +249,14 @@ struct ContentView: View {
             Color.designBackground
                 .ignoresSafeArea(edges: .bottom)
         )
+    }
+    
+    private var isSourceLessThanTarget: Bool {
+        guard let sourceTrack = viewModel.sourceTrack,
+              let targetTrack = viewModel.targetTrack else {
+            return false
+        }
+        return sourceTrack.playCount <= targetTrack.playCount
     }
     
     private var permissionRequestView: some View {
