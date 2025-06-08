@@ -4,6 +4,7 @@ import MediaPlayer
 struct DuplicateGroupDetailView: View {
     let group: ScanViewModel.DuplicateGroup
     @ObservedObject var musicRepeaterViewModel: MusicRepeaterViewModel
+    @ObservedObject var scanViewModel: ScanViewModel
     let onDismiss: () -> Void
     
     @Environment(\.presentationMode) var presentationMode
@@ -11,6 +12,8 @@ struct DuplicateGroupDetailView: View {
     @State private var selectedTargetTrack: MPMediaItem?
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var showingRemoveConfirmation = false
+    @State private var songToRemove: MPMediaItem?
     
     var body: some View {
         NavigationView {
@@ -19,11 +22,6 @@ struct DuplicateGroupDetailView: View {
                     VStack(spacing: AppSpacing.large) {
                         // Song Header
                         songHeaderSection
-                        
-                        // Quick Actions (if applicable)
-                        if group.hasPlayCountDifferences {
-                            quickActionsSection
-                        }
                         
                         // Versions List
                         versionsSection
@@ -53,6 +51,37 @@ struct DuplicateGroupDetailView: View {
                     }
                     .foregroundColor(Color.designPrimary)
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        songToRemove = nil // This indicates we're removing the whole group
+                        showingRemoveConfirmation = true
+                    }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(Color.designError)
+                    }
+                }
+            }
+        }
+        .alert(songToRemove != nil ? "Remove Song" : "Remove Group", isPresented: $showingRemoveConfirmation) {
+            Button("Remove", role: .destructive) {
+                if let songToRemove = songToRemove {
+                    removeSong(songToRemove)
+                } else {
+                    // Remove the entire group
+                    scanViewModel.removeGroup(groupId: group.id)
+                    onDismiss()
+                    presentationMode.wrappedValue.dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                songToRemove = nil
+            }
+        } message: {
+            if let song = songToRemove {
+                Text("Remove '\(song.albumTitle ?? "Unknown Album")' version from this duplicate group?")
+            } else {
+                Text("Remove this entire duplicate group?")
             }
         }
         .alert("Music Repeater", isPresented: $showingAlert) {
@@ -147,84 +176,6 @@ struct DuplicateGroupDetailView: View {
         }
     }
     
-    @ViewBuilder
-    private var quickActionsSection: some View {
-        if let sourceCandidate = group.sourceCandidate,
-           !group.targetCandidates.isEmpty {
-            
-            AppCard {
-                VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                    AppSectionHeader("Quick Actions", subtitle: "Auto-select tracks for common scenarios")
-                    
-                    VStack(spacing: AppSpacing.small) {
-                        Button(action: {
-                            // Select highest play count as source, lowest as target
-                            selectedSourceTrack = sourceCandidate
-                            selectedTargetTrack = group.targetCandidates.last // Lowest play count
-                        }) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Match Lowest to Highest")
-                                        .font(AppFont.subheadline)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(Color.designTextPrimary)
-                                    
-                                    Text("Update lowest play count track to match highest")
-                                        .font(AppFont.caption)
-                                        .foregroundColor(Color.designTextSecondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "arrow.up.circle.fill")
-                                    .font(AppFont.iconMedium)
-                                    .foregroundColor(Color.designPrimary)
-                            }
-                            .padding(AppSpacing.small)
-                            .background(
-                                RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                                    .fill(Color.designPrimary.opacity(0.1))
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        Button(action: {
-                            // Select highest play count as source, all others as targets (batch operation)
-                            selectedSourceTrack = sourceCandidate
-                            // For now, just select the first target candidate
-                            selectedTargetTrack = group.targetCandidates.first
-                        }) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Match All to Highest")
-                                        .font(AppFont.subheadline)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(Color.designTextPrimary)
-                                    
-                                    Text("Update all versions to match highest play count")
-                                        .font(AppFont.caption)
-                                        .foregroundColor(Color.designTextSecondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "arrow.up.circle.fill")
-                                    .font(AppFont.iconMedium)
-                                    .foregroundColor(Color.designSecondary)
-                            }
-                            .padding(AppSpacing.small)
-                            .background(
-                                RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                                    .fill(Color.designSecondary.opacity(0.1))
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                }
-            }
-        }
-    }
-    
     private var versionsSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
@@ -237,10 +188,14 @@ struct DuplicateGroupDetailView: View {
                             isSource: selectedSourceTrack?.persistentID == song.persistentID,
                             isTarget: selectedTargetTrack?.persistentID == song.persistentID,
                             onSelectAsSource: {
-                                selectedSourceTrack = song
+                                selectAsSource(song)
                             },
                             onSelectAsTarget: {
-                                selectedTargetTrack = song
+                                selectAsTarget(song)
+                            },
+                            onRemove: {
+                                songToRemove = song
+                                showingRemoveConfirmation = true
                             }
                         )
                     }
@@ -367,6 +322,56 @@ struct DuplicateGroupDetailView: View {
                !musicRepeaterViewModel.isProcessing
     }
     
+    // MARK: - Selection Logic
+    
+    private func selectAsSource(_ song: MPMediaItem) {
+        if selectedSourceTrack?.persistentID == song.persistentID {
+            // Tapping the same song as source again - deselect it
+            selectedSourceTrack = nil
+        } else {
+            // If this song was previously selected as target, clear target selection
+            if selectedTargetTrack?.persistentID == song.persistentID {
+                selectedTargetTrack = nil
+            }
+            // Set as new source
+            selectedSourceTrack = song
+        }
+    }
+    
+    private func selectAsTarget(_ song: MPMediaItem) {
+        if selectedTargetTrack?.persistentID == song.persistentID {
+            // Tapping the same song as target again - deselect it
+            selectedTargetTrack = nil
+        } else {
+            // If this song was previously selected as source, clear source selection
+            if selectedSourceTrack?.persistentID == song.persistentID {
+                selectedSourceTrack = nil
+            }
+            // Set as new target
+            selectedTargetTrack = song
+        }
+    }
+    
+    private func removeSong(_ song: MPMediaItem) {
+        // Clear selections if the removed song was selected
+        if selectedSourceTrack?.persistentID == song.persistentID {
+            selectedSourceTrack = nil
+        }
+        if selectedTargetTrack?.persistentID == song.persistentID {
+            selectedTargetTrack = nil
+        }
+        
+        // Remove the song from the scan results
+        scanViewModel.removeSong(from: group.id, songId: song.persistentID)
+        
+        // If the group now has less than 2 songs, dismiss the detail view
+        if let updatedGroup = scanViewModel.duplicateGroups.first(where: { $0.id == group.id }),
+           updatedGroup.songs.count < 2 {
+            onDismiss()
+            presentationMode.wrappedValue.dismiss()
+        }
+    }
+    
     private func matchPlayCount() {
         guard let sourceTrack = selectedSourceTrack,
               let targetTrack = selectedTargetTrack else {
@@ -400,13 +405,14 @@ struct DuplicateGroupDetailView: View {
     }
 }
 
-// MARK: - Duplicate Version Row Component
+// MARK: - Updated Duplicate Version Row Component
 struct DuplicateVersionRow: View {
     let song: MPMediaItem
     let isSource: Bool
     let isTarget: Bool
     let onSelectAsSource: () -> Void
     let onSelectAsTarget: () -> Void
+    let onRemove: () -> Void
     
     var body: some View {
         VStack(spacing: AppSpacing.small) {
@@ -439,6 +445,19 @@ struct DuplicateVersionRow: View {
                         .font(AppFont.caption)
                         .foregroundColor(Color.designTextSecondary)
                 }
+                
+                // Remove button
+                Button(action: onRemove) {
+                    Image(systemName: "trash")
+                        .font(AppFont.iconSmall)
+                        .foregroundColor(Color.designError)
+                        .padding(AppSpacing.xs)
+                        .background(
+                            Circle()
+                                .fill(Color.designError.opacity(0.1))
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
             }
             
             // Selection buttons

@@ -16,7 +16,7 @@ class ScanViewModel: ObservableObject {
         let id = UUID()
         let title: String
         let artist: String
-        let songs: [MPMediaItem]
+        var songs: [MPMediaItem]
         
         // Get the song with highest play count
         var sourceCandidate: MPMediaItem? {
@@ -145,6 +145,49 @@ class ScanViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    // MARK: - Remove Functionality
+    
+    /// Removes a specific song from a duplicate group
+    /// If the group ends up with less than 2 songs, the entire group is removed
+    func removeSong(from groupId: UUID, songId: MPMediaEntityPersistentID) {
+        guard let groupIndex = duplicateGroups.firstIndex(where: { $0.id == groupId }) else {
+            print("⚠️ ScanViewModel: Could not find group with id \(groupId)")
+            return
+        }
+        
+        let originalSongCount = duplicateGroups[groupIndex].songs.count
+        
+        // Remove the song from the group
+        duplicateGroups[groupIndex].songs.removeAll { $0.persistentID == songId }
+        
+        let newSongCount = duplicateGroups[groupIndex].songs.count
+        
+        print("🗑️ ScanViewModel: Removed song from group '\(duplicateGroups[groupIndex].title)' (\(originalSongCount) → \(newSongCount) songs)")
+        
+        // If group has less than 2 songs remaining, remove the entire group
+        if newSongCount < 2 {
+            let removedGroup = duplicateGroups.remove(at: groupIndex)
+            duplicatesFound = duplicateGroups.count
+            print("🗑️ ScanViewModel: Removed entire group '\(removedGroup.title)' as it now has less than 2 songs")
+        }
+        
+        // Update duplicates count
+        duplicatesFound = duplicateGroups.count
+    }
+    
+    /// Removes an entire duplicate group
+    func removeGroup(groupId: UUID) {
+        guard let groupIndex = duplicateGroups.firstIndex(where: { $0.id == groupId }) else {
+            print("⚠️ ScanViewModel: Could not find group with id \(groupId)")
+            return
+        }
+        
+        let removedGroup = duplicateGroups.remove(at: groupIndex)
+        duplicatesFound = duplicateGroups.count
+        
+        print("🗑️ ScanViewModel: Removed entire group '\(removedGroup.title)' (\(removedGroup.songs.count) songs)")
     }
     
     func clearResults() {

@@ -30,7 +30,8 @@ struct ScanTabView: View {
             .sheet(item: $selectedGroup) { group in
                 DuplicateGroupDetailView(
                     group: group,
-                    musicRepeaterViewModel: musicRepeaterViewModel
+                    musicRepeaterViewModel: musicRepeaterViewModel,
+                    scanViewModel: scanViewModel  // Pass scanViewModel to enable remove functionality
                 ) {
                     selectedGroup = nil
                 }
