@@ -48,6 +48,35 @@ struct ContentView: View {
                         .foregroundColor(Color.designTextPrimary)
                         .padding(.top, AppSpacing.xl)
                     
+                    // Tip about Smart Scan
+                    if viewModel.sourceTrack == nil && viewModel.targetTrack == nil {
+                        AppCard {
+                            HStack {
+                                Image(systemName: "lightbulb")
+                                    .font(AppFont.iconMedium)
+                                    .foregroundColor(Color.designInfo)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Tip: Try Smart Scan!")
+                                        .font(AppFont.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(Color.designTextPrimary)
+                                    
+                                    Text("Automatically find duplicate songs across different albums")
+                                        .font(AppFont.caption)
+                                        .foregroundColor(Color.designTextSecondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(AppFont.iconSmall)
+                                    .foregroundColor(Color.designTextTertiary)
+                            }
+                        }
+                        .appPadding(.horizontal)
+                    }
+                    
                     VStack(spacing: AppSpacing.large) {
                         // Source Track Section
                         VStack(alignment: .leading, spacing: AppSpacing.small) {

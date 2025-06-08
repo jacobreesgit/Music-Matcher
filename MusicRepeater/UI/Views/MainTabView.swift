@@ -11,6 +11,14 @@ struct MainTabView: View {
                         .font(AppFont.caption)
                 }
             
+            ScanTabView()
+                .tabItem {
+                    Image(systemName: "magnifyingglass.circle")
+                        .accessibilityLabel("Smart Scan")
+                    Text("Smart Scan")
+                        .font(AppFont.caption)
+                }
+            
             SettingsView()
                 .tabItem {
                     Image(systemName: "gear")
