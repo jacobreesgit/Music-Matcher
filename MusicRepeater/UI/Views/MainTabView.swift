@@ -20,6 +20,14 @@ struct MainTabView: View {
                 }
         }
         .accentColor(Color.designPrimary)
-        .background(Color.designBackground)
+        .onAppear {
+            // Configure native iOS tab bar appearance for glassy effect
+            let tabBarAppearance = UITabBarAppearance()
+            tabBarAppearance.configureWithDefaultBackground()
+            
+            // This gives the native iOS translucent/glassy effect
+            UITabBar.appearance().standardAppearance = tabBarAppearance
+            UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        }
     }
 }

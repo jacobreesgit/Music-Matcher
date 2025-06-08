@@ -28,10 +28,10 @@ struct SettingsView: View {
                             .accentColor(Color.designPrimary)
                     }
                     .padding(.vertical, 8)
-                    .listRowBackground(Color(UIColor.systemBackground))
+                    .listRowBackground(Color.designBackgroundSecondary)
                 }
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.designBackground)
             .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
