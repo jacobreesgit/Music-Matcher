@@ -1,24 +1,38 @@
 import SwiftUI
 import MediaPlayer
 
-struct AppSelectionButton: View {
+struct SongDisplayRow: View {
     let track: MPMediaItem?
     let icon: String
     let placeholderTitle: String
     let placeholderSubtitle: String?
     let action: () -> Void
+    let style: DisplayStyle
+    let isSelected: Bool
+    let showDateAdded: Bool
+    
+    enum DisplayStyle {
+        case selection  // For selection buttons (with card background and shadow)
+        case list      // For list items (plain background)
+    }
     
     init(
         track: MPMediaItem? = nil,
         icon: String,
         placeholderTitle: String,
         placeholderSubtitle: String? = nil,
+        style: DisplayStyle = .selection,
+        isSelected: Bool = false,
+        showDateAdded: Bool = false,
         action: @escaping () -> Void
     ) {
         self.track = track
         self.icon = icon
         self.placeholderTitle = placeholderTitle
         self.placeholderSubtitle = placeholderSubtitle
+        self.style = style
+        self.isSelected = isSelected
+        self.showDateAdded = showDateAdded
         self.action = action
     }
     
@@ -39,11 +53,8 @@ struct AppSelectionButton: View {
                     .foregroundColor(Color.designTextTertiary)
             }
             .padding(AppSpacing.medium)
-            .background(
-                RoundedRectangle(cornerRadius: AppCornerRadius.medium)
-                    .fill(Color.designBackgroundSecondary)
-                    .appShadow(.light)
-            )
+            .background(backgroundView)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -56,7 +67,7 @@ struct AppSelectionButton: View {
                 placeholderArtwork
             }
         }
-        .frame(width: 60, height: 60)
+        .frame(width: 60, height: 60) // Same size for both styles
         .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.small))
     }
     
@@ -64,9 +75,9 @@ struct AppSelectionButton: View {
         RoundedRectangle(cornerRadius: AppCornerRadius.small)
             .fill(Color.designBackgroundTertiary)
             .overlay(
-                Image(systemName: icon)
-                    .font(AppFont.iconMedium)
-                    .foregroundColor(Color.designPrimary)
+                Image(systemName: track == nil ? icon : "music.note")
+                    .font(AppFont.iconMedium) // Same icon size for both styles
+                    .foregroundColor(track == nil ? Color.designPrimary : Color.designTextSecondary)
             )
     }
     
@@ -82,14 +93,14 @@ struct AppSelectionButton: View {
     
     private func selectedTrackInfo(_ track: MPMediaItem) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            // Track Title
+            // Track Title - same font for both styles
             Text(track.title ?? "Unknown Track")
                 .font(AppFont.body)
                 .foregroundColor(Color.designTextPrimary)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
             
-            // Artist Name
+            // Artist Name - same font for both styles
             if let artist = track.artist {
                 Text(artist)
                     .font(AppFont.subheadline)
@@ -97,7 +108,7 @@ struct AppSelectionButton: View {
                     .lineLimit(1)
             }
             
-            // Album Name
+            // Album Name - same font for both styles
             if let album = track.albumTitle {
                 Text(album)
                     .font(AppFont.caption)
@@ -105,7 +116,7 @@ struct AppSelectionButton: View {
                     .lineLimit(1)
             }
             
-            // Additional Info
+            // Additional Info - same layout and fonts for both styles
             HStack(spacing: AppSpacing.small) {
                 // Play Count
                 Label("\(track.playCount)", systemImage: "play.fill")
@@ -117,6 +128,17 @@ struct AppSelectionButton: View {
                     Label(formatDuration(track.playbackDuration), systemImage: "clock")
                         .font(AppFont.caption)
                         .foregroundColor(Color.designTextSecondary)
+                }
+                
+                // Date added (only show when requested and for list style)
+                if style == .list && showDateAdded {
+                    Text("•")
+                        .font(AppFont.caption)
+                        .foregroundColor(Color.designTextTertiary)
+                    
+                    Text(formatDateAdded(track.dateAdded))
+                        .font(AppFont.caption)
+                        .foregroundColor(Color.designTextTertiary)
                 }
                 
                 Spacer()
@@ -139,10 +161,32 @@ struct AppSelectionButton: View {
         }
     }
     
+    @ViewBuilder
+    private var backgroundView: some View {
+        switch style {
+        case .selection:
+            RoundedRectangle(cornerRadius: AppCornerRadius.medium)
+                .fill(Color.designBackgroundSecondary)
+                .appShadow(.light)
+        case .list:
+            if isSelected {
+                Color.designPrimary.opacity(0.1)
+            } else {
+                Color.clear
+            }
+        }
+    }
+    
     private func formatDuration(_ duration: TimeInterval) -> String {
         let minutes = Int(duration) / 60
         let seconds = Int(duration) % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+    
+    private func formatDateAdded(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
 

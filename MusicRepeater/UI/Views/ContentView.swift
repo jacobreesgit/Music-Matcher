@@ -53,11 +53,12 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             AppSectionHeader("Source Track", subtitle: "Track to copy play count from")
                             
-                            AppSelectionButton(
+                            SongDisplayRow(
                                 track: viewModel.sourceTrack,
                                 icon: "music.note",
                                 placeholderTitle: "Choose Source Track",
-                                placeholderSubtitle: "Tap to select from your music library"
+                                placeholderSubtitle: "Tap to select from your music library",
+                                style: .selection
                             ) {
                                 showingSourcePicker = true
                             }
@@ -67,11 +68,12 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             AppSectionHeader("Target Track", subtitle: "Track to update play count for")
                             
-                            AppSelectionButton(
+                            SongDisplayRow(
                                 track: viewModel.targetTrack,
                                 icon: "music.note.list",
                                 placeholderTitle: "Choose Target Track",
-                                placeholderSubtitle: "Tap to select from your music library"
+                                placeholderSubtitle: "Tap to select from your music library",
+                                style: .selection
                             ) {
                                 showingTargetPicker = true
                             }

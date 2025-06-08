@@ -114,113 +114,22 @@ struct CustomMusicPickerView: View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(viewModel.filteredSongs, id: \.persistentID) { song in
-                    songRow(song)
+                    SongDisplayRow(
+                        track: song,
+                        icon: "music.note",
+                        placeholderTitle: "",
+                        style: .list,
+                        isSelected: selectedSong?.persistentID == song.persistentID,
+                        showDateAdded: viewModel.sortOption == .dateAdded
+                    ) {
+                        selectedSong = song
+                        onSelection(song)
+                        presentationMode.wrappedValue.dismiss()
+                    }
                 }
             }
             .padding(.bottom, AppSpacing.medium)
         }
-    }
-    
-    private func songRow(_ song: MPMediaItem) -> some View {
-        Button(action: {
-            selectedSong = song
-            onSelection(song)
-            presentationMode.wrappedValue.dismiss()
-        }) {
-            HStack(spacing: AppSpacing.medium) {
-                // Album Artwork
-                Group {
-                    if let artwork = song.artwork {
-                        ArtworkView(artwork: artwork)
-                    } else {
-                        RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                            .fill(Color.designBackgroundTertiary)
-                            .overlay(
-                                Image(systemName: "music.note")
-                                    .font(AppFont.iconSmall)
-                                    .foregroundColor(Color.designTextSecondary)
-                            )
-                    }
-                }
-                .frame(width: 50, height: 50)
-                .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.small))
-                
-                // Song Details
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(song.title ?? "Unknown Title")
-                        .font(AppFont.body)
-                        .foregroundColor(Color.designTextPrimary)
-                        .lineLimit(1)
-                    
-                    HStack(spacing: 4) {
-                        if let artist = song.artist {
-                            Text(artist)
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designTextSecondary)
-                                .lineLimit(1)
-                        }
-                        
-                        if song.artist != nil && song.albumTitle != nil {
-                            Text("•")
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designTextTertiary)
-                        }
-                        
-                        if let album = song.albumTitle {
-                            Text(album)
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designTextSecondary)
-                                .lineLimit(1)
-                        }
-                    }
-                    
-                    // Additional info
-                    HStack(spacing: AppSpacing.small) {
-                        // Play count
-                        Label("\(song.playCount)", systemImage: "play.fill")
-                            .font(AppFont.caption2)
-                            .foregroundColor(Color.designPrimary)
-                        
-                        // Duration
-                        if song.playbackDuration > 0 {
-                            Text("•")
-                                .font(AppFont.caption2)
-                                .foregroundColor(Color.designTextTertiary)
-                            
-                            Text(formatDuration(song.playbackDuration))
-                                .font(AppFont.caption2)
-                                .foregroundColor(Color.designTextTertiary)
-                        }
-                        
-                        // Date added (if sorting by date)
-                        if viewModel.sortOption == .dateAdded {
-                            Text("•")
-                                .font(AppFont.caption2)
-                                .foregroundColor(Color.designTextTertiary)
-                            
-                            Text(formatDateAdded(song.dateAdded))
-                                .font(AppFont.caption2)
-                                .foregroundColor(Color.designTextTertiary)
-                        }
-                    }
-                }
-                
-                Spacer()
-                
-                // Selection indicator
-                Image(systemName: "chevron.right")
-                    .font(AppFont.iconSmall)
-                    .foregroundColor(Color.designTextTertiary)
-            }
-            .padding(.horizontal)
-            .padding(.vertical, AppSpacing.small)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PlainButtonStyle())
-        .background(
-            selectedSong?.persistentID == song.persistentID ?
-            Color.designPrimary.opacity(0.1) : Color.clear
-        )
     }
     
     private var loadingView: some View {
@@ -281,17 +190,5 @@ struct CustomMusicPickerView: View {
             
             Spacer()
         }
-    }
-    
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let minutes = Int(duration) / 60
-        let seconds = Int(duration) % 60
-        return String(format: "%d:%02d", minutes, seconds)
-    }
-    
-    private func formatDateAdded(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
