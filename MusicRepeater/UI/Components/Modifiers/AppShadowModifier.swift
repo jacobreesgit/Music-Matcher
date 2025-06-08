@@ -14,32 +14,3 @@ struct AppShadowModifier: ViewModifier {
             )
     }
 }
-
-#if DEBUG
-struct AppShadowModifier_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: AppSpacing.xl) {
-            Text("Light Shadow")
-                .padding()
-                .background(Color.designBackgroundSecondary)
-                .cornerRadius(AppCornerRadius.medium)
-                .appShadow(.light)
-            
-            Text("Medium Shadow")
-                .padding()
-                .background(Color.designBackgroundSecondary)
-                .cornerRadius(AppCornerRadius.medium)
-                .appShadow(.medium)
-            
-            Text("Heavy Shadow")
-                .padding()
-                .background(Color.designBackgroundSecondary)
-                .cornerRadius(AppCornerRadius.medium)
-                .appShadow(.heavy)
-        }
-        .padding(AppSpacing.xl)
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif

@@ -24,19 +24,3 @@ struct AppFeatureRow: View {
         }
     }
 }
-
-#if DEBUG
-struct AppFeatureRow_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            AppFeatureRow("Match play counts between different versions of songs")
-            AppFeatureRow("Add play counts together from multiple sources", bulletColor: Color.designSecondary)
-            AppFeatureRow("Works with your existing music library", bulletColor: Color.designWarning)
-            AppFeatureRow("Fast playback processing to build up counts quickly", bulletColor: Color.designInfo)
-        }
-        .padding()
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif

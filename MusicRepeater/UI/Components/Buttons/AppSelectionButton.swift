@@ -308,29 +308,3 @@ struct TrackInfoCard: View {
         return formatter.string(from: date)
     }
 }
-
-#if DEBUG
-struct AppSelectionButton_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: AppSpacing.large) {
-            // Placeholder state
-            AppSelectionButton(
-                icon: "music.note",
-                placeholderTitle: "Choose Source Track",
-                placeholderSubtitle: "Tap to select from your music library"
-            ) { }
-            
-            // Note: In a real preview, you'd need a mock MPMediaItem
-            // This would show the selected track state with artwork
-            AppSelectionButton(
-                track: nil, // Would be actual MPMediaItem
-                icon: "music.note.list",
-                placeholderTitle: "Choose Target Track"
-            ) { }
-        }
-        .padding()
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif

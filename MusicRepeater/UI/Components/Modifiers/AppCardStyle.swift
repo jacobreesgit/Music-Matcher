@@ -16,32 +16,3 @@ struct AppCardStyle: ViewModifier {
             )
     }
 }
-
-#if DEBUG
-struct AppCardStyle_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: AppSpacing.large) {
-            Text("Standard Card")
-                .padding()
-                .appCardStyle()
-            
-            Text("Elevated Card")
-                .padding()
-                .appCardStyle(elevated: true)
-            
-            VStack {
-                Text("Complex Content Card")
-                    .font(AppFont.headline)
-                Text("With multiple elements")
-                    .font(AppFont.subheadline)
-                    .foregroundColor(Color.designTextSecondary)
-            }
-            .padding()
-            .appCardStyle(elevated: true)
-        }
-        .padding()
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif

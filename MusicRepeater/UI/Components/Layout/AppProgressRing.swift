@@ -57,34 +57,3 @@ struct AppProgressRing: View {
         }
     }
 }
-
-#if DEBUG
-struct AppProgressRing_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: AppSpacing.xl) {
-            HStack(spacing: AppSpacing.xl) {
-                AppProgressRing(progress: 0.3, size: 100)
-                AppProgressRing(progress: 0.6, size: 100)
-                AppProgressRing(progress: 0.9, size: 100)
-            }
-            
-            AppProgressRing(progress: 0.75, lineWidth: 8, size: 150)
-            
-            ZStack {
-                AppProgressRing(progress: 0.4, size: 200)
-                VStack {
-                    Text("8")
-                        .font(AppFont.counterLarge)
-                        .foregroundColor(Color.designTextPrimary)
-                    Text("of 20")
-                        .font(AppFont.headline)
-                        .foregroundColor(Color.designTextSecondary)
-                }
-            }
-        }
-        .padding()
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif

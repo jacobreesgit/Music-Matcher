@@ -47,19 +47,3 @@ struct SettingsView: View {
             .textCase(.none)
     }
 }
-
-#if DEBUG
-struct SettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            SettingsView()
-                .preferredColorScheme(.light)
-                .previewDisplayName("Light Mode")
-            
-            SettingsView()
-                .preferredColorScheme(.dark)
-                .previewDisplayName("Dark Mode")
-        }
-    }
-}
-#endif

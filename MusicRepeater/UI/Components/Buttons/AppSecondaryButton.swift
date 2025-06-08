@@ -37,18 +37,3 @@ struct AppSecondaryButton: View {
         .animation(AppAnimation.quick, value: isEnabled)
     }
 }
-
-#if DEBUG
-struct AppSecondaryButton_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: AppSpacing.medium) {
-            AppSecondaryButton("Add", subtitle: "10 → 35") { }
-            AppSecondaryButton("Disabled Button", isEnabled: false) { }
-            AppSecondaryButton("Simple Button") { }
-        }
-        .padding()
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif

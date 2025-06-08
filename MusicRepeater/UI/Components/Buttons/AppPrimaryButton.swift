@@ -40,18 +40,3 @@ struct AppPrimaryButton: View {
         .animation(AppAnimation.quick, value: isEnabled)
     }
 }
-
-#if DEBUG
-struct AppPrimaryButton_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: AppSpacing.medium) {
-            AppPrimaryButton("Match", subtitle: "10 → 25") { }
-            AppPrimaryButton("Disabled Button", isEnabled: false) { }
-            AppPrimaryButton("Simple Button") { }
-        }
-        .padding()
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif

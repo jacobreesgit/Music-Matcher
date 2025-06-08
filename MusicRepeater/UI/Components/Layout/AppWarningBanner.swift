@@ -29,20 +29,3 @@ struct AppWarningBanner: View {
         )
     }
 }
-
-#if DEBUG
-struct AppWarningBanner_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: AppSpacing.medium) {
-            AppWarningBanner("Warning: You've selected the same song for both source and target.")
-            
-            AppWarningBanner("This is a custom warning message.", icon: "exclamationmark.circle.fill")
-            
-            AppWarningBanner("A very long warning message that should wrap to multiple lines and still look good within the banner layout.")
-        }
-        .padding()
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif

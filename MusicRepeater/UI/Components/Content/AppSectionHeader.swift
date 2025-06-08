@@ -23,20 +23,3 @@ struct AppSectionHeader: View {
         }
     }
 }
-
-#if DEBUG
-struct AppSectionHeader_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            AppSectionHeader("Source Track")
-            
-            AppSectionHeader("Target Track", subtitle: "Track to update play count for")
-            
-            AppSectionHeader("Settings", subtitle: "Configure app preferences and behavior")
-        }
-        .padding()
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif

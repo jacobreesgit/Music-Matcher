@@ -23,26 +23,3 @@ struct AppControlButton: View {
         .animation(AppAnimation.quick, value: icon)
     }
 }
-
-#if DEBUG
-struct AppControlButton_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: AppSpacing.large) {
-            HStack(spacing: AppSpacing.xl) {
-                AppControlButton(icon: "play.circle.fill") { }
-                AppControlButton(icon: "pause.circle.fill") { }
-                AppControlButton(icon: "stop.circle.fill", color: Color.designError) { }
-            }
-            
-            HStack(spacing: AppSpacing.xl) {
-                AppControlButton(icon: "play.circle.fill", size: 40) { }
-                AppControlButton(icon: "pause.circle.fill", size: 40) { }
-                AppControlButton(icon: "stop.circle.fill", color: Color.designError, size: 40) { }
-            }
-        }
-        .padding()
-        .background(Color.designBackground)
-        .previewLayout(.sizeThatFits)
-    }
-}
-#endif
