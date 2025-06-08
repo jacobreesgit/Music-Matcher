@@ -229,6 +229,7 @@ struct ScanTabView: View {
                 }
             }
             .padding(.horizontal)
+            .padding(.top, AppSpacing.medium)
             .padding(.bottom, AppSpacing.large)
         }
     }
