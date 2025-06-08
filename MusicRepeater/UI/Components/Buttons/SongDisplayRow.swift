@@ -118,10 +118,23 @@ struct SongDisplayRow: View {
             
             // Additional Info - same layout and fonts for both styles
             HStack(spacing: AppSpacing.small) {
-                // Play Count
-                Label("\(track.playCount)", systemImage: "play.fill")
-                    .font(AppFont.caption)
-                    .foregroundColor(Color.designPrimary)
+                // Play Count Pill
+                HStack(spacing: 4) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(.white)
+                    
+                    Text("\(track.playCount)")
+                        .font(AppFont.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(Color.designPrimary)
+                )
                 
                 // Duration
                 if track.playbackDuration > 0 {
@@ -301,17 +314,23 @@ struct TrackInfoCard: View {
                     .lineLimit(1)
             }
             
-            // Play count highlight
-            HStack(spacing: AppSpacing.small) {
+            // Play count highlight with pill design
+            HStack(spacing: 4) {
                 Image(systemName: "play.fill")
-                    .font(AppFont.iconSmall)
-                    .foregroundColor(Color.designPrimary)
+                    .font(.system(size: 10))
+                    .foregroundColor(.white)
                 
                 Text("\(track.playCount) plays")
                     .font(AppFont.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundColor(Color.designPrimary)
+                    .foregroundColor(.white)
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(Color.designPrimary)
+            )
         }
     }
     

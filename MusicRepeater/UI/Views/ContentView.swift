@@ -10,6 +10,12 @@ struct ContentView: View {
     @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
     @State private var hasCheckedPermission = false
     
+    let onNavigateToScan: () -> Void
+    
+    init(onNavigateToScan: @escaping () -> Void = {}) {
+        self.onNavigateToScan = onNavigateToScan
+    }
+    
     var body: some View {
         Group {
             if musicLibraryPermission == .authorized {
@@ -50,30 +56,35 @@ struct ContentView: View {
                     
                     // Tip about Smart Scan
                     if viewModel.sourceTrack == nil && viewModel.targetTrack == nil {
-                        AppCard {
-                            HStack {
-                                Image(systemName: "lightbulb")
-                                    .font(AppFont.iconMedium)
-                                    .foregroundColor(Color.designInfo)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Tip: Try Smart Scan!")
-                                        .font(AppFont.subheadline)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(Color.designTextPrimary)
+                        Button(action: {
+                            onNavigateToScan()
+                        }) {
+                            AppCard {
+                                HStack {
+                                    Image(systemName: "lightbulb")
+                                        .font(AppFont.iconMedium)
+                                        .foregroundColor(Color.designInfo)
                                     
-                                    Text("Automatically find duplicate songs across different albums")
-                                        .font(AppFont.caption)
-                                        .foregroundColor(Color.designTextSecondary)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Tip: Try Smart Scan!")
+                                            .font(AppFont.subheadline)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(Color.designTextPrimary)
+                                        
+                                        Text("Automatically find duplicate songs across different albums")
+                                            .font(AppFont.caption)
+                                            .foregroundColor(Color.designTextSecondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(AppFont.iconSmall)
+                                        .foregroundColor(Color.designTextTertiary)
                                 }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(AppFont.iconSmall)
-                                    .foregroundColor(Color.designTextTertiary)
                             }
                         }
+                        .buttonStyle(PlainButtonStyle())
                         .appPadding(.horizontal)
                     }
                     

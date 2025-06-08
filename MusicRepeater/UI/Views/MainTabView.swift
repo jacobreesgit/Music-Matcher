@@ -1,15 +1,20 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @State private var selectedTab: Int = 0
+    
     var body: some View {
-        TabView {
-            ContentView()
+        TabView(selection: $selectedTab) {
+            ContentView(onNavigateToScan: {
+                selectedTab = 1
+            })
                 .tabItem {
                     Image(systemName: "music.note")
                         .accessibilityLabel("Music Repeater")
                     Text("Repeater")
                         .font(AppFont.caption)
                 }
+                .tag(0)
             
             ScanTabView()
                 .tabItem {
@@ -18,6 +23,7 @@ struct MainTabView: View {
                     Text("Smart Scan")
                         .font(AppFont.caption)
                 }
+                .tag(1)
             
             SettingsView()
                 .tabItem {
@@ -26,6 +32,7 @@ struct MainTabView: View {
                     Text("Settings")
                         .font(AppFont.caption)
                 }
+                .tag(2)
         }
         .accentColor(Color.designPrimary)
         .onAppear {
