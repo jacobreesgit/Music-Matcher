@@ -43,16 +43,13 @@ class ScanViewModel: ObservableObject {
         }
     }
     
-    func startAutoScan() {
-        guard !isScanning else { return }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.startScan()
-        }
-    }
-    
     func startScan() {
-        guard !isScanning else { return }
+        guard !isScanning else {
+            print("🔍 ScanViewModel: Scan already in progress, ignoring duplicate call")
+            return
+        }
+        
+        print("🔍 ScanViewModel: Starting music library scan...")
         
         isScanning = true
         scanProgress = 0.0
@@ -71,6 +68,8 @@ class ScanViewModel: ObservableObject {
         let query = MPMediaQuery.songs()
         let allSongs = query.items ?? []
         
+        print("🎵 ScanViewModel: Retrieved \(allSongs.count) songs from music library")
+        
         DispatchQueue.main.async {
             self.totalSongsScanned = allSongs.count
         }
@@ -79,7 +78,7 @@ class ScanViewModel: ObservableObject {
         var songGroups: [String: [MPMediaItem]] = [:]
         
         for (index, song) in allSongs.enumerated() {
-            // Update progress
+            // Update progress (throttled by the UI component)
             let progress = Double(index) / Double(allSongs.count)
             DispatchQueue.main.async {
                 self.scanProgress = progress
@@ -131,6 +130,20 @@ class ScanViewModel: ObservableObject {
             self.scanProgress = 1.0
             self.isScanning = false
             self.scanComplete = true
+            
+            let totalDuplicateSongs = sortedDuplicates.reduce(0) { $0 + $1.songs.count }
+            print("✅ ScanViewModel: Scan completed!")
+            print("📊 ScanViewModel: Found \(sortedDuplicates.count) duplicate groups containing \(totalDuplicateSongs) total songs out of \(allSongs.count) scanned")
+            
+            if sortedDuplicates.isEmpty {
+                print("🎉 ScanViewModel: No duplicates found - library is clean!")
+            } else {
+                print("🎵 ScanViewModel: Top duplicate groups:")
+                for (index, group) in sortedDuplicates.prefix(3).enumerated() {
+                    let playCountDiff = group.maxPlayCount - group.minPlayCount
+                    print("   \(index + 1). \"\(group.title)\" by \(group.artist) - \(group.songs.count) versions (play count range: \(group.minPlayCount)-\(group.maxPlayCount), diff: \(playCountDiff))")
+                }
+            }
         }
     }
     

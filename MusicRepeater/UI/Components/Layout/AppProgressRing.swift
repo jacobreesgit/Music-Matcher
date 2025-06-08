@@ -6,6 +6,7 @@ struct AppProgressRing: View {
     let size: CGFloat
     
     @State private var animatedProgress: Double = 0
+    @State private var lastUpdateTime: Date = Date()
     
     init(progress: Double, lineWidth: CGFloat = 12, size: CGFloat = 200) {
         self.progress = progress
@@ -48,12 +49,29 @@ struct AppProgressRing: View {
         }
         .frame(width: size, height: size)
         .onChange(of: progress) { _, newProgress in
-            withAnimation(AppAnimation.standard) {
-                animatedProgress = newProgress
-            }
+            updateProgressWithThrottling(newProgress)
         }
         .onAppear {
             animatedProgress = progress
+        }
+    }
+    
+    private func updateProgressWithThrottling(_ newProgress: Double) {
+        let now = Date()
+        let timeSinceLastUpdate = now.timeIntervalSince(lastUpdateTime)
+        
+        // Only update if at least 50ms have passed since the last update
+        // This prevents multiple updates per frame
+        if timeSinceLastUpdate >= 0.05 {
+            lastUpdateTime = now
+            withAnimation(AppAnimation.standard) {
+                animatedProgress = newProgress
+            }
+        } else {
+            // Schedule an update after the throttle period
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                self.updateProgressWithThrottling(newProgress)
+            }
         }
     }
 }

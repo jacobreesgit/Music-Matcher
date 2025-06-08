@@ -2,12 +2,15 @@ import SwiftUI
 import MediaPlayer
 
 struct ScanTabView: View {
-    @StateObject private var scanViewModel = ScanViewModel()
+    @ObservedObject var scanViewModel: ScanViewModel
     @StateObject private var musicRepeaterViewModel = MusicRepeaterViewModel()
     @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
-    @State private var hasAutoScanned = false
     @State private var selectedGroup: ScanViewModel.DuplicateGroup?
     @State private var showingProcessingView = false
+    
+    init(scanViewModel: ScanViewModel) {
+        self.scanViewModel = scanViewModel
+    }
     
     var body: some View {
         NavigationView {
@@ -23,12 +26,6 @@ struct ScanTabView: View {
             .navigationBarTitleDisplayMode(.large)
             .onAppear {
                 checkMusicLibraryPermission()
-            }
-            .onChange(of: musicLibraryPermission) { _, newStatus in
-                if newStatus == .authorized && !hasAutoScanned {
-                    hasAutoScanned = true
-                    scanViewModel.startAutoScan()
-                }
             }
             .sheet(item: $selectedGroup) { group in
                 DuplicateGroupDetailView(
