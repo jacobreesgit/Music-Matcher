@@ -5,6 +5,7 @@ struct MainTabView: View {
     @State private var selectedTab: Int = 0
     @StateObject private var scanViewModel = ScanViewModel()
     @State private var hasTriggeredAutoScan = false
+    @StateObject private var shortcutActionManager = ShortcutActionManager.shared
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -50,6 +51,11 @@ struct MainTabView: View {
             // Trigger auto-scan if we have permission and haven't done it yet
             triggerAutoScanIfNeeded()
         }
+        .onChange(of: shortcutActionManager.shouldTriggerScan) { _, shouldTrigger in
+            if shouldTrigger {
+                handleSmartScanShortcut()
+            }
+        }
     }
     
     private func triggerAutoScanIfNeeded() {
@@ -68,6 +74,25 @@ struct MainTabView: View {
             }
         } else {
             print("❌ MainTabView: Music library access not granted (status: \(permission.rawValue)), auto-scan skipped")
+        }
+    }
+    
+    private func handleSmartScanShortcut() {
+        print("🔍 MainTabView: Handling Smart Scan shortcut")
+        
+        // Navigate to Smart Scan tab
+        selectedTab = 1
+        
+        // Check for music library permission
+        let permission = MPMediaLibrary.authorizationStatus()
+        if permission == .authorized {
+            // Small delay to ensure tab switch is complete
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                print("🚀 MainTabView: Starting Smart Scan from shortcut...")
+                scanViewModel.startScan()
+            }
+        } else {
+            print("❌ MainTabView: Cannot start Smart Scan - music library access not granted")
         }
     }
 }

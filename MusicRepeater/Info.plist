@@ -4,5 +4,18 @@
 <dict>
 	<key>UIBackgroundModes</key>
 	<array/>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.jacobrees.MusicRepeater.smartscan</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Rescan</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Find duplicate songs</string>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeSearch</string>
+		</dict>
+	</array>
 </dict>
 </plist>
