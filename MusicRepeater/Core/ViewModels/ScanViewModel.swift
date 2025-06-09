@@ -162,12 +162,6 @@ class ScanViewModel: ObservableObject {
                 } else {
                     print("🎉 ScanViewModel: No duplicates found - library is clean!")
                 }
-            } else {
-                print("🎵 ScanViewModel: Top duplicate groups:")
-                for (index, group) in sortedDuplicates.prefix(3).enumerated() {
-                    let playCountDiff = group.maxPlayCount - group.minPlayCount
-                    print("   \(index + 1). \"\(group.title)\" by \(group.artist) - \(group.songs.count) versions (play count range: \(group.minPlayCount)-\(group.maxPlayCount), diff: \(playCountDiff))")
-                }
             }
         }
     }
