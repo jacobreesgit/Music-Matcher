@@ -259,9 +259,9 @@ struct IgnoredItemsSettingsView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: AppSpacing.medium) {
-                        ForEach(ignoredItemsManager.ignoredGroupDetails) { group in
-                            IgnoredGroupCard(group: group) {
-                                ignoredItemsManager.restoreGroup(group.groupKey)
+                        ForEach(ignoredItemsManager.ignoredDuplicateGroups) { group in
+                            IgnoredDuplicateGroupRow(group: group) {
+                                ignoredItemsManager.restoreGroup(group)
                             }
                         }
                     }
@@ -400,59 +400,62 @@ struct IgnoredSongGroupCard: View {
     }
 }
 
-struct IgnoredGroupCard: View {
-    let group: IgnoredItemsManager.IgnoredGroupDetail
+// MARK: - New Ignored Duplicate Group Row using DuplicateGroupRow
+struct IgnoredDuplicateGroupRow: View {
+    let group: ScanViewModel.DuplicateGroup
     let onRestore: () -> Void
     
     var body: some View {
-        AppCard {
-            HStack {
-                VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    Text(group.songTitle)
-                        .font(AppFont.headline)
-                        .foregroundColor(Color.designTextPrimary)
-                        .lineLimit(2)
-                    
-                    Text(group.artistName)
-                        .font(AppFont.subheadline)
-                        .foregroundColor(Color.designTextSecondary)
-                        .lineLimit(1)
-                    
-                    HStack {
-                        Text("\(group.songCount) songs")
+        VStack(spacing: 0) {
+            // Use the DuplicateGroupRow component with no action
+            DuplicateGroupRow(group: group) {
+                // No action - we handle restore separately
+            }
+            .allowsHitTesting(false) // Disable interaction with the main row
+            
+            // Add restore section at the bottom
+            VStack(spacing: 0) {
+                Divider()
+                    .background(Color.designTextTertiary)
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Ignored Group")
                             .font(AppFont.caption)
-                            .foregroundColor(Color.designInfo)
+                            .fontWeight(.medium)
+                            .foregroundColor(Color.designWarning)
                         
-                        Text("•")
+                        Text("This entire duplicate group is hidden from scans")
                             .font(AppFont.caption)
-                            .foregroundColor(Color.designTextTertiary)
-                        
-                        Text("Ignored \(formatIgnoredDate(group.ignoredDate))")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextTertiary)
+                            .foregroundColor(Color.designTextSecondary)
                     }
+                    
+                    Spacer()
+                    
+                    Button("Restore Group") {
+                        onRestore()
+                    }
+                    .font(AppFont.subheadline)
+                    .foregroundColor(Color.designSecondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppCornerRadius.small)
+                            .stroke(Color.designSecondary, lineWidth: 1)
+                    )
                 }
-                
-                Spacer()
-                
-                Button("Restore") {
-                    onRestore()
-                }
-                .font(AppFont.subheadline)
-                .foregroundColor(Color.designSecondary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                        .stroke(Color.designSecondary, lineWidth: 1)
-                )
+                .padding(AppSpacing.medium)
             }
         }
-    }
-    
-    private func formatIgnoredDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+        .background(
+            RoundedRectangle(cornerRadius: AppCornerRadius.medium)
+                .fill(Color.designBackgroundSecondary)
+                .appShadow(.light)
+        )
+        .overlay(
+            // Add a subtle border to indicate it's ignored
+            RoundedRectangle(cornerRadius: AppCornerRadius.medium)
+                .stroke(Color.designWarning.opacity(0.3), lineWidth: 1)
+        )
     }
 }

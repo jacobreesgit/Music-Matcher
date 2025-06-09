@@ -17,9 +17,9 @@ class IgnoredItemsManager: ObservableObject {
     @Published var ignoredSongs: Set<MPMediaEntityPersistentID> = []
     @Published var ignoredGroups: Set<String> = [] // Format: "title|artist"
     
-    // Detailed tracking for settings UI
+    // Detailed tracking for settings UI - now using DuplicateGroup structure
     @Published var ignoredSongDetails: [IgnoredSongDetail] = []
-    @Published var ignoredGroupDetails: [IgnoredGroupDetail] = []
+    @Published var ignoredDuplicateGroups: [ScanViewModel.DuplicateGroup] = []
     
     struct IgnoredSongDetail: Identifiable, Codable {
         let id = UUID()
@@ -32,19 +32,6 @@ class IgnoredItemsManager: ObservableObject {
         
         enum CodingKeys: String, CodingKey {
             case songId, songTitle, artistName, albumTitle, groupKey, ignoredDate
-        }
-    }
-    
-    struct IgnoredGroupDetail: Identifiable, Codable {
-        let id = UUID()
-        let groupKey: String // "title|artist"
-        let songTitle: String
-        let artistName: String
-        let songCount: Int
-        let ignoredDate: Date
-        
-        enum CodingKeys: String, CodingKey {
-            case groupKey, songTitle, artistName, songCount, ignoredDate
         }
     }
     
@@ -69,7 +56,7 @@ class IgnoredItemsManager: ObservableObject {
         
         // Load detailed information
         loadIgnoredSongDetails()
-        loadIgnoredGroupDetails()
+        loadIgnoredDuplicateGroups()
         
         print("📋 IgnoredItemsManager: Loaded \(ignoredSongs.count) ignored songs and \(ignoredGroups.count) ignored groups")
     }
@@ -87,7 +74,7 @@ class IgnoredItemsManager: ObservableObject {
         
         // Save detailed information
         saveIgnoredSongDetails()
-        saveIgnoredGroupDetails()
+        saveIgnoredDuplicateGroups()
         
         print("💾 IgnoredItemsManager: Saved \(ignoredSongs.count) ignored songs and \(ignoredGroups.count) ignored groups")
     }
@@ -105,16 +92,17 @@ class IgnoredItemsManager: ObservableObject {
         }
     }
     
-    private func loadIgnoredGroupDetails() {
-        if let data = userDefaults.data(forKey: "ignoredGroupDetails"),
-           let details = try? JSONDecoder().decode([IgnoredGroupDetail].self, from: data) {
-            ignoredGroupDetails = details
+    private func loadIgnoredDuplicateGroups() {
+        if let data = userDefaults.data(forKey: "ignoredDuplicateGroups"),
+           let groups = try? JSONDecoder().decode([DuplicateGroupData].self, from: data) {
+            ignoredDuplicateGroups = groups.map { $0.toDuplicateGroup() }
         }
     }
     
-    private func saveIgnoredGroupDetails() {
-        if let data = try? JSONEncoder().encode(ignoredGroupDetails) {
-            userDefaults.set(data, forKey: "ignoredGroupDetails")
+    private func saveIgnoredDuplicateGroups() {
+        let groupData = ignoredDuplicateGroups.map { DuplicateGroupData(from: $0) }
+        if let data = try? JSONEncoder().encode(groupData) {
+            userDefaults.set(data, forKey: "ignoredDuplicateGroups")
         }
     }
     
@@ -152,20 +140,31 @@ class IgnoredItemsManager: ObservableObject {
         print("🚫 IgnoredItemsManager: Ignored song '\(detail.songTitle)' from album '\(detail.albumTitle)'")
     }
     
-    /// Ignore an entire group
+    /// Ignore an entire group - now stores as DuplicateGroup
+    func ignoreGroup(_ group: ScanViewModel.DuplicateGroup) {
+        let groupKey = createGroupKey(title: group.title, artist: group.artist)
+        ignoredGroups.insert(groupKey)
+        
+        // Store the entire group structure
+        ignoredDuplicateGroups.append(group)
+        
+        saveIgnoredItems()
+        
+        print("🚫 IgnoredItemsManager: Ignored group '\(group.title)' by \(group.artist) (\(group.songs.count) songs)")
+    }
+    
+    /// Ignore an entire group (legacy method for backward compatibility)
     func ignoreGroup(title: String, artist: String, songCount: Int) {
         let groupKey = createGroupKey(title: title, artist: artist)
         ignoredGroups.insert(groupKey)
         
-        // Add detailed information
-        let detail = IgnoredGroupDetail(
-            groupKey: groupKey,
-            songTitle: title,
-            artistName: artist,
-            songCount: songCount,
-            ignoredDate: Date()
+        // Create a minimal DuplicateGroup for storage
+        let group = ScanViewModel.DuplicateGroup(
+            title: title,
+            artist: artist,
+            songs: [] // Empty songs array for legacy groups
         )
-        ignoredGroupDetails.append(detail)
+        ignoredDuplicateGroups.append(group)
         
         saveIgnoredItems()
         
@@ -184,10 +183,16 @@ class IgnoredItemsManager: ObservableObject {
     /// Restore an entire ignored group
     func restoreGroup(_ groupKey: String) {
         ignoredGroups.remove(groupKey)
-        ignoredGroupDetails.removeAll { $0.groupKey == groupKey }
+        ignoredDuplicateGroups.removeAll { createGroupKey(title: $0.title, artist: $0.artist) == groupKey }
         saveIgnoredItems()
         
         print("✅ IgnoredItemsManager: Restored group '\(groupKey)'")
+    }
+    
+    /// Restore a group by DuplicateGroup
+    func restoreGroup(_ group: ScanViewModel.DuplicateGroup) {
+        let groupKey = createGroupKey(title: group.title, artist: group.artist)
+        restoreGroup(groupKey)
     }
     
     /// Clear all ignored songs
@@ -204,7 +209,7 @@ class IgnoredItemsManager: ObservableObject {
     func clearAllIgnoredGroups() {
         let count = ignoredGroups.count
         ignoredGroups.removeAll()
-        ignoredGroupDetails.removeAll()
+        ignoredDuplicateGroups.removeAll()
         saveIgnoredItems()
         
         print("🗑️ IgnoredItemsManager: Cleared \(count) ignored groups")
@@ -256,5 +261,59 @@ class IgnoredItemsManager: ObservableObject {
     /// Get ignored songs grouped by their original group
     func getIgnoredSongsByGroup() -> [String: [IgnoredSongDetail]] {
         return Dictionary(grouping: ignoredSongDetails) { $0.groupKey }
+    }
+}
+
+// MARK: - Codable Support for DuplicateGroup
+
+private struct DuplicateGroupData: Codable {
+    let title: String
+    let artist: String
+    let songData: [SongData]
+    
+    struct SongData: Codable {
+        let persistentID: MPMediaEntityPersistentID
+        let title: String?
+        let artist: String?
+        let albumTitle: String?
+        let playCount: Int
+        let playbackDuration: TimeInterval
+        let dateAdded: Date
+    }
+    
+    init(from group: ScanViewModel.DuplicateGroup) {
+        self.title = group.title
+        self.artist = group.artist
+        self.songData = group.songs.map { song in
+            SongData(
+                persistentID: song.persistentID,
+                title: song.title,
+                artist: song.artist,
+                albumTitle: song.albumTitle,
+                playCount: song.playCount,
+                playbackDuration: song.playbackDuration,
+                dateAdded: song.dateAdded
+            )
+        }
+    }
+    
+    func toDuplicateGroup() -> ScanViewModel.DuplicateGroup {
+        // Note: We can't reconstruct actual MPMediaItems, so we'll need to create
+        // a special version that works with stored data
+        let songs = songData.compactMap { data -> MPMediaItem? in
+            // Try to find the song in the current library by persistent ID
+            let query = MPMediaQuery.songs()
+            query.addFilterPredicate(MPMediaPropertyPredicate(
+                value: data.persistentID,
+                forProperty: MPMediaItemPropertyPersistentID
+            ))
+            return query.items?.first
+        }
+        
+        return ScanViewModel.DuplicateGroup(
+            title: title,
+            artist: artist,
+            songs: songs
+        )
     }
 }
