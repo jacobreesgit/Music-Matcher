@@ -4,6 +4,7 @@ import MediaPlayer
 struct ScanTabView: View {
     @ObservedObject var scanViewModel: ScanViewModel
     @StateObject private var musicRepeaterViewModel = MusicRepeaterViewModel()
+    @StateObject private var ignoredItemsManager = IgnoredItemsManager.shared
     @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
     @State private var selectedGroup: ScanViewModel.DuplicateGroup?
     @State private var showingProcessingView = false
@@ -181,6 +182,24 @@ struct ScanTabView: View {
                                 Text("total songs")
                                     .font(AppFont.caption)
                                     .foregroundColor(Color.designTextSecondary)
+                            }
+                        }
+                        
+                        // Show ignored items indicator if any exist
+                        if ignoredItemsManager.hasIgnoredItems {
+                            Divider()
+                                .background(Color.designTextTertiary)
+                            
+                            HStack {
+                                Image(systemName: "eye.slash")
+                                    .font(AppFont.iconSmall)
+                                    .foregroundColor(Color.designInfo)
+                                
+                                Text("\(ignoredItemsManager.totalIgnoredItems) items ignored from previous removals")
+                                    .font(AppFont.caption)
+                                    .foregroundColor(Color.designInfo)
+                                
+                                Spacer()
                             }
                         }
                     }

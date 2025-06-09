@@ -361,7 +361,8 @@ struct DuplicateGroupDetailView: View {
             selectedTargetTrack = nil
         }
         
-        // Remove the song from the scan results
+        // Remove the song using the updated scan view model method
+        // This will mark it as permanently ignored
         scanViewModel.removeSong(from: group.id, songId: song.persistentID)
         
         // If the group now has less than 2 songs, dismiss the detail view

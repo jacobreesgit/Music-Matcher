@@ -11,6 +11,7 @@ class ScanViewModel: ObservableObject {
     @Published var duplicatesFound: Int = 0
     
     private var cancellables = Set<AnyCancellable>()
+    private let ignoredItemsManager = IgnoredItemsManager.shared
     
     struct DuplicateGroup: Identifiable {
         let id = UUID()
@@ -84,12 +85,22 @@ class ScanViewModel: ObservableObject {
                 self.scanProgress = progress
             }
             
+            // Skip songs that are individually ignored
+            if ignoredItemsManager.shouldIgnoreSong(song.persistentID) {
+                continue
+            }
+            
             // Create key from title and artist (case insensitive, trimmed)
             let title = song.title?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
             let artist = song.artist?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
             
             // Skip songs without proper title or artist
             guard !title.isEmpty && !artist.isEmpty else { continue }
+            
+            // Skip if this entire group is ignored
+            if ignoredItemsManager.shouldIgnoreGroup(title: song.title ?? "", artist: song.artist ?? "") {
+                continue
+            }
             
             let key = "\(title)|\(artist)"
             
@@ -107,12 +118,16 @@ class ScanViewModel: ObservableObject {
             let albums = Set(songs.compactMap { $0.albumTitle })
             guard albums.count > 1 else { return nil }
             
+            // Apply ignored items filtering
+            let filteredSongs = ignoredItemsManager.filterIgnoredSongs(songs)
+            guard filteredSongs.count >= 2 else { return nil }
+            
             // Use original casing from first song for display
-            let firstSong = songs.first!
+            let firstSong = filteredSongs.first!
             return DuplicateGroup(
                 title: firstSong.title ?? "Unknown",
                 artist: firstSong.artist ?? "Unknown",
-                songs: songs.sorted { $0.playCount > $1.playCount } // Sort by play count descending
+                songs: filteredSongs.sorted { $0.playCount > $1.playCount } // Sort by play count descending
             )
         }
         
@@ -132,11 +147,21 @@ class ScanViewModel: ObservableObject {
             self.scanComplete = true
             
             let totalDuplicateSongs = sortedDuplicates.reduce(0) { $0 + $1.songs.count }
+            let ignoredCount = self.ignoredItemsManager.totalIgnoredItems
+            
             print("✅ ScanViewModel: Scan completed!")
             print("📊 ScanViewModel: Found \(sortedDuplicates.count) duplicate groups containing \(totalDuplicateSongs) total songs out of \(allSongs.count) scanned")
             
+            if ignoredCount > 0 {
+                print("🚫 ScanViewModel: \(ignoredCount) items were ignored from previous removals")
+            }
+            
             if sortedDuplicates.isEmpty {
-                print("🎉 ScanViewModel: No duplicates found - library is clean!")
+                if ignoredCount > 0 {
+                    print("🎉 ScanViewModel: No new duplicates found - remaining library is clean!")
+                } else {
+                    print("🎉 ScanViewModel: No duplicates found - library is clean!")
+                }
             } else {
                 print("🎵 ScanViewModel: Top duplicate groups:")
                 for (index, group) in sortedDuplicates.prefix(3).enumerated() {
@@ -147,47 +172,65 @@ class ScanViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Remove Functionality
+    // MARK: - Remove Functionality (Updated to use IgnoredItemsManager)
     
-    /// Removes a specific song from a duplicate group
-    /// If the group ends up with less than 2 songs, the entire group is removed
+    /// Removes a specific song from a duplicate group and marks it as ignored
+    /// If the group ends up with less than 2 songs, the entire group is removed from current results
     func removeSong(from groupId: UUID, songId: MPMediaEntityPersistentID) {
         guard let groupIndex = duplicateGroups.firstIndex(where: { $0.id == groupId }) else {
             print("⚠️ ScanViewModel: Could not find group with id \(groupId)")
             return
         }
         
-        let originalSongCount = duplicateGroups[groupIndex].songs.count
+        let group = duplicateGroups[groupIndex]
         
-        // Remove the song from the group
+        // Find the song to remove
+        guard let song = group.songs.first(where: { $0.persistentID == songId }) else {
+            print("⚠️ ScanViewModel: Could not find song with id \(songId) in group")
+            return
+        }
+        
+        let originalSongCount = group.songs.count
+        
+        // Mark the song as ignored permanently
+        ignoredItemsManager.ignoreSong(song, fromGroupTitle: group.title, artist: group.artist)
+        
+        // Remove the song from the current group
         duplicateGroups[groupIndex].songs.removeAll { $0.persistentID == songId }
         
         let newSongCount = duplicateGroups[groupIndex].songs.count
         
-        print("🗑️ ScanViewModel: Removed song from group '\(duplicateGroups[groupIndex].title)' (\(originalSongCount) → \(newSongCount) songs)")
+        print("🗑️ ScanViewModel: Permanently ignored song '\(song.albumTitle ?? "Unknown")' from group '\(group.title)' (\(originalSongCount) → \(newSongCount) songs)")
         
-        // If group has less than 2 songs remaining, remove the entire group
+        // If group has less than 2 songs remaining, remove it from current results
+        // (but don't mark the group as ignored - individual songs were ignored instead)
         if newSongCount < 2 {
             let removedGroup = duplicateGroups.remove(at: groupIndex)
             duplicatesFound = duplicateGroups.count
-            print("🗑️ ScanViewModel: Removed entire group '\(removedGroup.title)' as it now has less than 2 songs")
+            print("📝 ScanViewModel: Removed group '\(removedGroup.title)' from current results as it now has less than 2 songs")
         }
         
         // Update duplicates count
         duplicatesFound = duplicateGroups.count
     }
     
-    /// Removes an entire duplicate group
+    /// Removes an entire duplicate group and marks it as ignored
     func removeGroup(groupId: UUID) {
         guard let groupIndex = duplicateGroups.firstIndex(where: { $0.id == groupId }) else {
             print("⚠️ ScanViewModel: Could not find group with id \(groupId)")
             return
         }
         
-        let removedGroup = duplicateGroups.remove(at: groupIndex)
+        let group = duplicateGroups[groupIndex]
+        
+        // Mark the entire group as ignored permanently
+        ignoredItemsManager.ignoreGroup(title: group.title, artist: group.artist, songCount: group.songs.count)
+        
+        // Remove from current results
+        duplicateGroups.remove(at: groupIndex)
         duplicatesFound = duplicateGroups.count
         
-        print("🗑️ ScanViewModel: Removed entire group '\(removedGroup.title)' (\(removedGroup.songs.count) songs)")
+        print("🗑️ ScanViewModel: Permanently ignored entire group '\(group.title)' by \(group.artist) (\(group.songs.count) songs)")
     }
     
     func clearResults() {
@@ -196,5 +239,15 @@ class ScanViewModel: ObservableObject {
         totalSongsScanned = 0
         duplicatesFound = 0
         scanProgress = 0.0
+    }
+    
+    // MARK: - Ignored Items Interface
+    
+    var hasIgnoredItems: Bool {
+        return ignoredItemsManager.hasIgnoredItems
+    }
+    
+    var totalIgnoredItems: Int {
+        return ignoredItemsManager.totalIgnoredItems
     }
 }
