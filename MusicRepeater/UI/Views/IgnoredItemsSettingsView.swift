@@ -234,13 +234,9 @@ struct IgnoredItemsSettingsView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: AppSpacing.medium) {
-                        let groupedSongs = ignoredItemsManager.getIgnoredSongsByGroup()
-                        
-                        ForEach(Array(groupedSongs.keys.sorted()), id: \.self) { groupKey in
-                            if let songs = groupedSongs[groupKey] {
-                                IgnoredSongGroupCard(groupKey: groupKey, songs: songs) { songId in
-                                    ignoredItemsManager.restoreSong(songId)
-                                }
+                        ForEach(ignoredItemsManager.ignoredSongDetails) { songDetail in
+                            IgnoredSongCard(songDetail: songDetail) { songId in
+                                ignoredItemsManager.restoreSong(songId)
                             }
                         }
                     }
@@ -259,7 +255,7 @@ struct IgnoredItemsSettingsView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: AppSpacing.medium) {
-                        ForEach(ignoredItemsManager.ignoredDuplicateGroups) { group in
+                        ForEach(ignoredItemsManager.ignoredGroups) { group in
                             IgnoredDuplicateGroupRow(group: group) {
                                 ignoredItemsManager.restoreGroup(group)
                             }
@@ -308,87 +304,47 @@ struct IgnoredItemsSettingsView: View {
 
 // MARK: - Supporting Views
 
-struct IgnoredSongGroupCard: View {
-    let groupKey: String
-    let songs: [IgnoredItemsManager.IgnoredSongDetail]
+struct IgnoredSongCard: View {
+    let songDetail: IgnoredItemsManager.IgnoredSongDetail
     let onRestoreSong: (MPMediaEntityPersistentID) -> Void
-    
-    private var groupInfo: (title: String, artist: String) {
-        if let firstSong = songs.first {
-            // Extract from the first song's actual data
-            return (firstSong.songTitle, firstSong.artistName)
-        }
-        
-        // Fallback: parse from group key
-        let components = groupKey.components(separatedBy: "|")
-        return (components.first ?? "Unknown", components.last ?? "Unknown")
-    }
     
     var body: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                // Group Header
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(groupInfo.title)
-                            .font(AppFont.headline)
-                            .foregroundColor(Color.designTextPrimary)
-                        
-                        Text(groupInfo.artist)
-                            .font(AppFont.subheadline)
-                            .foregroundColor(Color.designTextSecondary)
-                    }
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(songDetail.songTitle)
+                        .font(AppFont.headline)
+                        .foregroundColor(Color.designTextPrimary)
+                        .lineLimit(1)
                     
-                    Spacer()
+                    Text(songDetail.artistName)
+                        .font(AppFont.subheadline)
+                        .foregroundColor(Color.designTextSecondary)
+                        .lineLimit(1)
                     
-                    Text("\(songs.count) song\(songs.count == 1 ? "" : "s")")
+                    Text(songDetail.albumTitle)
                         .font(AppFont.caption)
-                        .foregroundColor(Color.designInfo)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(Color.designInfo.opacity(0.2))
-                        )
+                        .foregroundColor(Color.designTextTertiary)
+                        .lineLimit(1)
+                    
+                    Text("Ignored \(formatIgnoredDate(songDetail.ignoredDate))")
+                        .font(AppFont.caption)
+                        .foregroundColor(Color.designTextTertiary)
                 }
                 
-                // Individual Songs
-                VStack(spacing: AppSpacing.small) {
-                    ForEach(songs.sorted(by: { $0.ignoredDate > $1.ignoredDate }), id: \.id) { song in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(song.albumTitle)
-                                    .font(AppFont.subheadline)
-                                    .foregroundColor(Color.designTextPrimary)
-                                    .lineLimit(1)
-                                
-                                Text("Ignored \(formatIgnoredDate(song.ignoredDate))")
-                                    .font(AppFont.caption)
-                                    .foregroundColor(Color.designTextTertiary)
-                            }
-                            
-                            Spacer()
-                            
-                            Button("Restore") {
-                                onRestoreSong(song.songId)
-                            }
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designPrimary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                                    .stroke(Color.designPrimary, lineWidth: 1)
-                            )
-                        }
-                        .padding(.horizontal, AppSpacing.small)
-                        .padding(.vertical, AppSpacing.xs)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                                .fill(Color.designBackgroundTertiary)
-                        )
-                    }
+                Spacer()
+                
+                Button("Restore") {
+                    onRestoreSong(songDetail.songId)
                 }
+                .font(AppFont.subheadline)
+                .foregroundColor(Color.designPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCornerRadius.small)
+                        .stroke(Color.designPrimary, lineWidth: 1)
+                )
             }
         }
     }
@@ -400,7 +356,7 @@ struct IgnoredSongGroupCard: View {
     }
 }
 
-// MARK: - New Ignored Duplicate Group Row using DuplicateGroupRow
+// MARK: - Ignored Duplicate Group Row using DuplicateGroupRow
 struct IgnoredDuplicateGroupRow: View {
     let group: ScanViewModel.DuplicateGroup
     let onRestore: () -> Void

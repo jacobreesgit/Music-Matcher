@@ -13,11 +13,41 @@ class ScanViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let ignoredItemsManager = IgnoredItemsManager.shared
     
-    struct DuplicateGroup: Identifiable {
-        let id = UUID()
+    struct DuplicateGroup: Identifiable, Codable {
+        let id: UUID
         let title: String
         let artist: String
         var songs: [MPMediaItem]
+        
+        // Codable implementation
+        enum CodingKeys: String, CodingKey {
+            case id, title, artist
+        }
+        
+        // Custom encoder (MPMediaItem can't be encoded directly)
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(id, forKey: .id)
+            try container.encode(title, forKey: .title)
+            try container.encode(artist, forKey: .artist)
+        }
+        
+        // Custom decoder
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.id = try container.decode(UUID.self, forKey: .id)
+            self.title = try container.decode(String.self, forKey: .title)
+            self.artist = try container.decode(String.self, forKey: .artist)
+            self.songs = [] // Will be populated separately
+        }
+        
+        // Standard initializer
+        init(title: String, artist: String, songs: [MPMediaItem]) {
+            self.id = UUID()
+            self.title = title
+            self.artist = artist
+            self.songs = songs
+        }
         
         // Get the song with highest play count
         var sourceCandidate: MPMediaItem? {
@@ -187,7 +217,7 @@ class ScanViewModel: ObservableObject {
         let originalSongCount = group.songs.count
         
         // Mark the song as ignored permanently
-        ignoredItemsManager.ignoreSong(song, fromGroupTitle: group.title, artist: group.artist)
+        ignoredItemsManager.ignoreSong(song, fromGroup: group)
         
         // Remove the song from the current group
         duplicateGroups[groupIndex].songs.removeAll { $0.persistentID == songId }
@@ -197,7 +227,6 @@ class ScanViewModel: ObservableObject {
         print("🗑️ ScanViewModel: Permanently ignored song '\(song.albumTitle ?? "Unknown")' from group '\(group.title)' (\(originalSongCount) → \(newSongCount) songs)")
         
         // If group has less than 2 songs remaining, remove it from current results
-        // (but don't mark the group as ignored - individual songs were ignored instead)
         if newSongCount < 2 {
             let removedGroup = duplicateGroups.remove(at: groupIndex)
             duplicatesFound = duplicateGroups.count
@@ -218,7 +247,7 @@ class ScanViewModel: ObservableObject {
         let group = duplicateGroups[groupIndex]
         
         // Mark the entire group as ignored permanently
-        ignoredItemsManager.ignoreGroup(title: group.title, artist: group.artist, songCount: group.songs.count)
+        ignoredItemsManager.ignoreGroup(group)
         
         // Remove from current results
         duplicateGroups.remove(at: groupIndex)
