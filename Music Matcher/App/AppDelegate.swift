@@ -37,7 +37,7 @@ class ShortcutActionManager: ObservableObject {
         print("🔧 AppDelegate: Handling shortcut item: \(shortcutItem.type)")
         
         switch shortcutItem.type {
-        case "com.jacobrees.MusicRepeater.smartscan":
+        case "com.jacobrees.MusicMatcher.smartscan":
             DispatchQueue.main.async {
                 self.triggerScan()
             }

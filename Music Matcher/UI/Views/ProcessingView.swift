@@ -2,7 +2,7 @@ import SwiftUI
 import MediaPlayer
 
 struct ProcessingView: View {
-    @ObservedObject var viewModel: MusicRepeaterViewModel
+    @ObservedObject var viewModel: MusicMatcherViewModel
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {

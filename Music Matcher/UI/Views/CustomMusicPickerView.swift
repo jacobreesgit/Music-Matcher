@@ -182,7 +182,7 @@ struct CustomMusicPickerView: View {
                 .font(AppFont.title3)
                 .foregroundColor(Color.designTextPrimary)
             
-            Text("Your music library appears to be empty. Add some music to your device to use Music Repeater.")
+            Text("Your music library appears to be empty. Add some music to your device to use Music Matcher.")
                 .font(AppFont.body)
                 .foregroundColor(Color.designTextSecondary)
                 .multilineTextAlignment(.center)

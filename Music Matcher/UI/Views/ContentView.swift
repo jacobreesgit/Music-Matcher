@@ -2,7 +2,7 @@ import SwiftUI
 import MediaPlayer
 
 struct ContentView: View {
-    @StateObject private var viewModel = MusicRepeaterViewModel()
+    @StateObject private var viewModel = MusicMatcherViewModel()
     @State private var showingSourcePicker = false
     @State private var showingTargetPicker = false
     @State private var showingAlert = false
@@ -26,7 +26,7 @@ struct ContentView: View {
                 }
             }
             .background(Color.designBackground)
-            .navigationTitle(musicLibraryPermission == .authorized ? "Music Repeater" : "")
+            .navigationTitle(musicLibraryPermission == .authorized ? "Music Matcher" : "")
             .navigationBarTitleDisplayMode(.large)
             .navigationBarHidden(musicLibraryPermission != .authorized)
         }
@@ -43,7 +43,7 @@ struct ContentView: View {
                 viewModel.alertMessage = ""
             }
         }
-        .alert("Music Repeater", isPresented: $showingAlert) {
+        .alert("Music Matcher", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(alertMessage)
@@ -304,14 +304,14 @@ struct ContentView: View {
                 AppPermissionScreen(
                     icon: "music.note.house",
                     title: "Music Library Access",
-                    description: "Music Repeater needs access to your music library to synchronize play counts between different versions of songs.",
+                    description: "Music Matcher needs access to your music library to synchronize play counts between different versions of songs.",
                     buttonTitle: "Open Settings",
                     buttonAction: {
                         if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
                             UIApplication.shared.open(settingsUrl)
                         }
                     },
-                    statusMessage: "To use Music Repeater, please enable Music access in Settings → Privacy & Security → Media & Apple Music → Music Repeater"
+                    statusMessage: "To use Music Matcher, please enable Music access in Settings → Privacy & Security → Media & Apple Music → Music Matcher"
                 )
             } else if musicLibraryPermission == .restricted {
                 AppPermissionScreen(
@@ -326,7 +326,7 @@ struct ContentView: View {
                 AppPermissionScreen(
                     icon: "music.note.house",
                     title: "Music Library Access",
-                    description: "Music Repeater needs access to your music library to synchronize play counts between different versions of songs.",
+                    description: "Music Matcher needs access to your music library to synchronize play counts between different versions of songs.",
                     buttonTitle: "Grant Music Access",
                     buttonAction: {
                         requestMusicLibraryAccess()

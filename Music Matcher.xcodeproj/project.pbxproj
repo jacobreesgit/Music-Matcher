@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		0772D7812DF0A1000070A607 /* MusicRepeater.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicRepeater.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0772D7812DF0A1000070A607 /* Music Matcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Music Matcher.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		07FA68A02DF5FC9000D2A622 /* Exceptions for "MusicRepeater" folder in "MusicRepeater" target */ = {
+		07FA68A02DF5FC9000D2A622 /* Exceptions for "Music Matcher" folder in "Music Matcher" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 0772D7802DF0A1000070A607 /* MusicRepeater */;
+			target = 0772D7802DF0A1000070A607 /* Music Matcher */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		0772D7832DF0A1000070A607 /* MusicRepeater */ = {
+		0772D7832DF0A1000070A607 /* Music Matcher */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				07FA68A02DF5FC9000D2A622 /* Exceptions for "MusicRepeater" folder in "MusicRepeater" target */,
+				07FA68A02DF5FC9000D2A622 /* Exceptions for "Music Matcher" folder in "Music Matcher" target */,
 			);
-			path = MusicRepeater;
+			path = "Music Matcher";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -45,7 +45,7 @@
 		0772D7782DF0A1000070A607 = {
 			isa = PBXGroup;
 			children = (
-				0772D7832DF0A1000070A607 /* MusicRepeater */,
+				0772D7832DF0A1000070A607 /* Music Matcher */,
 				0772D7822DF0A1000070A607 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -53,7 +53,7 @@
 		0772D7822DF0A1000070A607 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0772D7812DF0A1000070A607 /* MusicRepeater.app */,
+				0772D7812DF0A1000070A607 /* Music Matcher.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,9 +61,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0772D7802DF0A1000070A607 /* MusicRepeater */ = {
+		0772D7802DF0A1000070A607 /* Music Matcher */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0772D78C2DF0A1010070A607 /* Build configuration list for PBXNativeTarget "MusicRepeater" */;
+			buildConfigurationList = 0772D78C2DF0A1010070A607 /* Build configuration list for PBXNativeTarget "Music Matcher" */;
 			buildPhases = (
 				0772D77D2DF0A1000070A607 /* Sources */,
 				0772D77E2DF0A1000070A607 /* Frameworks */,
@@ -74,13 +74,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				0772D7832DF0A1000070A607 /* MusicRepeater */,
+				0772D7832DF0A1000070A607 /* Music Matcher */,
 			);
-			name = MusicRepeater;
+			name = "Music Matcher";
 			packageProductDependencies = (
 			);
 			productName = MusicRepeater;
-			productReference = 0772D7812DF0A1000070A607 /* MusicRepeater.app */;
+			productReference = 0772D7812DF0A1000070A607 /* Music Matcher.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -98,7 +98,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 0772D77C2DF0A1000070A607 /* Build configuration list for PBXProject "MusicRepeater" */;
+			buildConfigurationList = 0772D77C2DF0A1000070A607 /* Build configuration list for PBXProject "Music Matcher" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -112,7 +112,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0772D7802DF0A1000070A607 /* MusicRepeater */,
+				0772D7802DF0A1000070A607 /* Music Matcher */,
 			);
 		};
 /* End PBXProject section */
@@ -269,7 +269,7 @@
 				DEVELOPMENT_TEAM = 5RP4WRQ9V2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MusicRepeater/Info.plist;
+				INFOPLIST_FILE = "Music Matcher/Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "This app needs access to your music library to match play counts between versions of a song.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -282,7 +282,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jacobrees.MusicRepeater;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobrees.MusicMatcher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -300,7 +300,7 @@
 				DEVELOPMENT_TEAM = 5RP4WRQ9V2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MusicRepeater/Info.plist;
+				INFOPLIST_FILE = "Music Matcher/Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "This app needs access to your music library to match play counts between versions of a song.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -313,7 +313,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jacobrees.MusicRepeater;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobrees.MusicMatcher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -324,7 +324,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0772D77C2DF0A1000070A607 /* Build configuration list for PBXProject "MusicRepeater" */ = {
+		0772D77C2DF0A1000070A607 /* Build configuration list for PBXProject "Music Matcher" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0772D78A2DF0A1010070A607 /* Debug */,
@@ -333,7 +333,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0772D78C2DF0A1010070A607 /* Build configuration list for PBXNativeTarget "MusicRepeater" */ = {
+		0772D78C2DF0A1010070A607 /* Build configuration list for PBXNativeTarget "Music Matcher" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0772D78D2DF0A1010070A607 /* Debug */,

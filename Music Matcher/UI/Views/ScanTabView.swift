@@ -3,7 +3,7 @@ import MediaPlayer
 
 struct ScanTabView: View {
     @ObservedObject var scanViewModel: ScanViewModel
-    @StateObject private var musicRepeaterViewModel = MusicRepeaterViewModel()
+    @StateObject private var musicMatcherViewModel = MusicMatcherViewModel()
     @ObservedObject private var ignoredItemsManager = IgnoredItemsManager.shared
     @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
     @State private var selectedGroup: ScanViewModel.DuplicateGroup?
@@ -34,14 +34,14 @@ struct ScanTabView: View {
         .sheet(item: $selectedGroup) { group in
             DuplicateGroupDetailView(
                 group: group,
-                musicRepeaterViewModel: musicRepeaterViewModel,
+                musicMatcherViewModel: musicMatcherViewModel,
                 scanViewModel: scanViewModel
             ) {
                 selectedGroup = nil
             }
         }
-        .fullScreenCover(isPresented: $musicRepeaterViewModel.showingProcessingView) {
-            ProcessingView(viewModel: musicRepeaterViewModel)
+        .fullScreenCover(isPresented: $musicMatcherViewModel.showingProcessingView) {
+            ProcessingView(viewModel: musicMatcherViewModel)
         }
     }
     

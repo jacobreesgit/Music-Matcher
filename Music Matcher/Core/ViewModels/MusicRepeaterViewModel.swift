@@ -2,7 +2,7 @@ import Foundation
 import MediaPlayer
 import Combine
 
-class MusicRepeaterViewModel: ObservableObject {
+class MusicMatcherViewModel: ObservableObject {
     // Published properties for UI binding
     @Published var sourceTrack: MPMediaItem? = nil
     @Published var targetTrack: MPMediaItem? = nil

@@ -1,7 +1,7 @@
 import SwiftUI
 import Foundation
 
-// MARK: - Design System for MusicRepeater App
+// MARK: - Design System for Music Matcher App
 // Core design tokens and system definitions used throughout the application.
 
 // MARK: - Color Palette

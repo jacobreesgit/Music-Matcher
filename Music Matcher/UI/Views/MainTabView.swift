@@ -14,8 +14,8 @@ struct MainTabView: View {
             })
                 .tabItem {
                     Image(systemName: "music.note")
-                        .accessibilityLabel("Music Repeater")
-                    Text("Repeater")
+                        .accessibilityLabel("Music Matcher")
+                    Text("Matcher")
                         .font(AppFont.caption)
                 }
                 .tag(0)

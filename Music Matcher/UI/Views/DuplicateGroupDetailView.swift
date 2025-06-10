@@ -3,7 +3,7 @@ import MediaPlayer
 
 struct DuplicateGroupDetailView: View {
     let group: ScanViewModel.DuplicateGroup
-    @ObservedObject var musicRepeaterViewModel: MusicRepeaterViewModel
+    @ObservedObject var musicMatcherViewModel: MusicMatcherViewModel
     @ObservedObject var scanViewModel: ScanViewModel
     let onDismiss: () -> Void
     
@@ -84,16 +84,16 @@ struct DuplicateGroupDetailView: View {
                 Text("Remove this entire duplicate group?")
             }
         }
-        .alert("Music Repeater", isPresented: $showingAlert) {
+        .alert("Music Matcher", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(alertMessage)
         }
-        .onReceive(musicRepeaterViewModel.$alertMessage) { message in
+        .onReceive(musicMatcherViewModel.$alertMessage) { message in
             if !message.isEmpty {
                 alertMessage = message
                 showingAlert = true
-                musicRepeaterViewModel.alertMessage = ""
+                musicMatcherViewModel.alertMessage = ""
             }
         }
     }
@@ -319,7 +319,7 @@ struct DuplicateGroupDetailView: View {
         
         return sourceTrack.persistentID != targetTrack.persistentID &&
                sourceTrack.playCount > targetTrack.playCount &&
-               !musicRepeaterViewModel.isProcessing
+               !musicMatcherViewModel.isProcessing
     }
     
     // MARK: - Selection Logic
@@ -380,12 +380,12 @@ struct DuplicateGroupDetailView: View {
             return
         }
         
-        // Set the tracks in the music repeater view model
-        musicRepeaterViewModel.selectSourceTrack(sourceTrack)
-        musicRepeaterViewModel.selectTargetTrack(targetTrack)
+        // Set the tracks in the music matcher view model
+        musicMatcherViewModel.selectSourceTrack(sourceTrack)
+        musicMatcherViewModel.selectTargetTrack(targetTrack)
         
         // Start matching
-        musicRepeaterViewModel.startMatching()
+        musicMatcherViewModel.startMatching()
     }
     
     private func addPlayCount() {
@@ -396,12 +396,12 @@ struct DuplicateGroupDetailView: View {
             return
         }
         
-        // Set the tracks in the music repeater view model
-        musicRepeaterViewModel.selectSourceTrack(sourceTrack)
-        musicRepeaterViewModel.selectTargetTrack(targetTrack)
+        // Set the tracks in the music matcher view model
+        musicMatcherViewModel.selectSourceTrack(sourceTrack)
+        musicMatcherViewModel.selectTargetTrack(targetTrack)
         
         // Start adding
-        musicRepeaterViewModel.startAdding()
+        musicMatcherViewModel.startAdding()
     }
 }
 

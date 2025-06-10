@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct MusicRepeaterApp: App {
+struct MusicMatcherApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @ObservedObject private var shortcutActionManager = ShortcutActionManager.shared // Changed from @StateObject
     
