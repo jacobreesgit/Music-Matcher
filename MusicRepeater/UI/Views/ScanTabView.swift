@@ -23,8 +23,9 @@ struct ScanTabView: View {
                 }
             }
             .background(Color.designBackground)
-            .navigationTitle("Smart Scan")
+            .navigationTitle(musicLibraryPermission == .authorized ? "Smart Scan" : "")
             .navigationBarTitleDisplayMode(.large)
+            .navigationBarHidden(musicLibraryPermission != .authorized)
             .onAppear {
                 checkMusicLibraryPermission()
             }
@@ -257,9 +258,9 @@ struct ScanTabView: View {
     private var permissionView: some View {
         AppPermissionScreen(
             icon: "magnifyingglass.circle",
-            title: "Library Access Required",
-            description: "Smart Scan needs access to your music library to find duplicate songs across different albums.",
-            buttonTitle: "Grant Access",
+            title: "Music Library Access",
+            description: "Smart Scan needs access to your music library to find duplicate songs with the same title and artist across different albums.",
+            buttonTitle: "Grant Music Access",
             buttonAction: {
                 requestMusicLibraryAccess()
             }
