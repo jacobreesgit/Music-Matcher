@@ -4,7 +4,7 @@ import MediaPlayer
 struct ScanTabView: View {
     @ObservedObject var scanViewModel: ScanViewModel
     @StateObject private var musicRepeaterViewModel = MusicRepeaterViewModel()
-    @StateObject private var ignoredItemsManager = IgnoredItemsManager.shared
+    @ObservedObject private var ignoredItemsManager = IgnoredItemsManager.shared // Changed from @StateObject
     @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
     @State private var selectedGroup: ScanViewModel.DuplicateGroup?
     @State private var showingProcessingView = false

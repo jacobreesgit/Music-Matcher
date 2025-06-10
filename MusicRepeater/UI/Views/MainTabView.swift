@@ -5,7 +5,7 @@ struct MainTabView: View {
     @State private var selectedTab: Int = 0
     @StateObject private var scanViewModel = ScanViewModel()
     @State private var hasTriggeredAutoScan = false
-    @StateObject private var shortcutActionManager = ShortcutActionManager.shared
+    @ObservedObject private var shortcutActionManager = ShortcutActionManager.shared // Changed from @StateObject
     
     var body: some View {
         TabView(selection: $selectedTab) {

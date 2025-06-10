@@ -3,7 +3,7 @@ import SwiftUI
 @main
 struct MusicRepeaterApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var shortcutActionManager = ShortcutActionManager.shared
+    @ObservedObject private var shortcutActionManager = ShortcutActionManager.shared // Changed from @StateObject
     
     var body: some Scene {
         WindowGroup {

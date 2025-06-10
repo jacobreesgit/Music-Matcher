@@ -2,7 +2,7 @@ import SwiftUI
 import MediaPlayer
 
 struct IgnoredItemsSettingsView: View {
-    @StateObject private var ignoredItemsManager = IgnoredItemsManager.shared
+    @ObservedObject private var ignoredItemsManager = IgnoredItemsManager.shared // Changed from @StateObject
     @Environment(\.presentationMode) var presentationMode
     @State private var selectedTab = 0
     @State private var showingClearAllAlert = false
@@ -121,15 +121,15 @@ struct IgnoredItemsSettingsView: View {
             // Tab Selector
             tabSelector
             
-            // Swipeable Content
-            TabView(selection: $selectedTab) {
-                ignoredSongsView
-                    .tag(0)
-                
-                ignoredGroupsView
-                    .tag(1)
+            // Content based on selected tab
+            Group {
+                if selectedTab == 0 {
+                    ignoredSongsView
+                } else {
+                    ignoredGroupsView
+                }
             }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .animation(.easeInOut(duration: 0.2), value: selectedTab) // Smooth tab transition
         }
     }
     
@@ -236,7 +236,9 @@ struct IgnoredItemsSettingsView: View {
                     LazyVStack(spacing: AppSpacing.medium) {
                         ForEach(ignoredItemsManager.ignoredSongDetails) { songDetail in
                             IgnoredSongCard(songDetail: songDetail) { songId in
-                                ignoredItemsManager.restoreSong(songId)
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    ignoredItemsManager.restoreSong(songId)
+                                }
                             }
                         }
                     }
@@ -256,8 +258,10 @@ struct IgnoredItemsSettingsView: View {
                 ScrollView {
                     LazyVStack(spacing: AppSpacing.medium) {
                         ForEach(ignoredItemsManager.ignoredGroups) { group in
-                            IgnoredDuplicateGroupRow(group: group) {
-                                ignoredItemsManager.restoreGroup(group)
+                            IgnoredDuplicateGroupCard(group: group) {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    ignoredItemsManager.restoreGroup(group)
+                                }
                             }
                         }
                     }
@@ -270,34 +274,34 @@ struct IgnoredItemsSettingsView: View {
     }
     
     private func emptyTabView(icon: String, message: String) -> some View {
-        GeometryReader { geometry in
-            VStack {
-                Spacer()
+        VStack {
+            Spacer()
+            
+            VStack(spacing: AppSpacing.large) {
+                Image(systemName: icon)
+                    .font(.system(size: 40))
+                    .foregroundColor(Color.designTextTertiary)
                 
-                VStack(spacing: AppSpacing.large) {
-                    Image(systemName: icon)
-                        .font(.system(size: 40))
-                        .foregroundColor(Color.designTextTertiary)
-                    
-                    Text(message)
-                        .font(AppFont.subheadline)
-                        .foregroundColor(Color.designTextSecondary)
-                }
-                
-                Spacer()
+                Text(message)
+                    .font(AppFont.subheadline)
+                    .foregroundColor(Color.designTextSecondary)
             }
-            .frame(width: geometry.size.width, height: geometry.size.height)
+            
+            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private func performClearAll() {
-        switch clearAllType {
-        case .songs:
-            ignoredItemsManager.clearAllIgnoredSongs()
-        case .groups:
-            ignoredItemsManager.clearAllIgnoredGroups()
-        case .all:
-            ignoredItemsManager.clearAll()
+        withAnimation(.easeInOut(duration: 0.3)) {
+            switch clearAllType {
+            case .songs:
+                ignoredItemsManager.clearAllIgnoredSongs()
+            case .groups:
+                ignoredItemsManager.clearAllIgnoredGroups()
+            case .all:
+                ignoredItemsManager.clearAll()
+            }
         }
     }
 }
@@ -356,35 +360,71 @@ struct IgnoredSongCard: View {
     }
 }
 
-// MARK: - Ignored Duplicate Group Row using DuplicateGroupRow
-struct IgnoredDuplicateGroupRow: View {
+// MARK: - Simplified Ignored Duplicate Group Card
+struct IgnoredDuplicateGroupCard: View {
     let group: ScanViewModel.DuplicateGroup
     let onRestore: () -> Void
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Use the DuplicateGroupRow component with no action
-            DuplicateGroupRow(group: group) {
-                // No action - we handle restore separately
-            }
-            .allowsHitTesting(false) // Disable interaction with the main row
-            
-            // Add restore section at the bottom
-            VStack(spacing: 0) {
+        AppCard {
+            VStack(spacing: AppSpacing.medium) {
+                // Header with group info
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(group.title)
+                            .font(AppFont.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color.designTextPrimary)
+                            .lineLimit(2)
+                        
+                        Text(group.artist)
+                            .font(AppFont.subheadline)
+                            .foregroundColor(Color.designTextSecondary)
+                            .lineLimit(1)
+                        
+                        Text("\(group.songs.count) versions")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.designInfo)
+                    }
+                    
+                    Spacer()
+                    
+                    // Status indicator
+                    VStack(spacing: 4) {
+                        Image(systemName: "eye.slash.fill")
+                            .font(AppFont.iconMedium)
+                            .foregroundColor(Color.designWarning)
+                        
+                        Text("Ignored")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.designWarning)
+                    }
+                }
+                
+                // Album info
+                let albums = Array(Set(group.songs.compactMap { $0.albumTitle })).sorted()
+                let displayAlbums = albums.prefix(2)
+                let albumText = albums.count <= 2 ?
+                    displayAlbums.joined(separator: ", ") :
+                    displayAlbums.joined(separator: ", ") + " + \(albums.count - 2) more"
+                
+                HStack {
+                    Text("Albums: \(albumText)")
+                        .font(AppFont.caption)
+                        .foregroundColor(Color.designTextTertiary)
+                        .lineLimit(2)
+                    
+                    Spacer()
+                }
+                
+                // Restore button
                 Divider()
                     .background(Color.designTextTertiary)
                 
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Ignored Group")
-                            .font(AppFont.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(Color.designWarning)
-                        
-                        Text("This entire duplicate group is hidden from scans")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                    }
+                    Text("This group is hidden from Smart Scans")
+                        .font(AppFont.caption)
+                        .foregroundColor(Color.designTextSecondary)
                     
                     Spacer()
                     
@@ -400,14 +440,8 @@ struct IgnoredDuplicateGroupRow: View {
                             .stroke(Color.designSecondary, lineWidth: 1)
                     )
                 }
-                .padding(AppSpacing.medium)
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: AppCornerRadius.medium)
-                .fill(Color.designBackgroundSecondary)
-                .appShadow(.light)
-        )
         .overlay(
             // Add a subtle border to indicate it's ignored
             RoundedRectangle(cornerRadius: AppCornerRadius.medium)

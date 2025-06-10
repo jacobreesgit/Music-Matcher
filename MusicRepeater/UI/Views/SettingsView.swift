@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject private var settingsManager = SettingsManager.shared
-    @StateObject private var ignoredItemsManager = IgnoredItemsManager.shared
+    @ObservedObject private var settingsManager = SettingsManager.shared // Changed from @StateObject
+    @ObservedObject private var ignoredItemsManager = IgnoredItemsManager.shared // Changed from @StateObject
     @State private var showingIgnoredItems = false
     
     var body: some View {
