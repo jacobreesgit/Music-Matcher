@@ -17,12 +17,18 @@ struct ContentView: View {
     }
     
     var body: some View {
-        Group {
-            if musicLibraryPermission == .authorized {
-                authorizedView
-            } else {
-                permissionRequestView
+        NavigationView {
+            VStack(spacing: 0) {
+                if musicLibraryPermission == .authorized {
+                    authorizedView
+                } else {
+                    permissionRequestView
+                }
             }
+            .background(Color.designBackground)
+            .navigationTitle(musicLibraryPermission == .authorized ? "Music Repeater" : "")
+            .navigationBarTitleDisplayMode(.large)
+            .navigationBarHidden(musicLibraryPermission != .authorized)
         }
         .onAppear {
             if !hasCheckedPermission {
@@ -48,12 +54,6 @@ struct ContentView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: AppSpacing.large) {
-                    // Main Title
-                    Text("Music Repeater")
-                        .font(AppFont.largeTitle)
-                        .foregroundColor(Color.designTextPrimary)
-                        .padding(.top, AppSpacing.xl)
-                    
                     // Tip about Smart Scan
                     if viewModel.sourceTrack == nil && viewModel.targetTrack == nil {
                         Button(action: {
@@ -86,6 +86,7 @@ struct ContentView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                         .appPadding(.horizontal)
+                        .padding(.top)
                     }
                     
                     VStack(spacing: AppSpacing.large) {
@@ -159,7 +160,6 @@ struct ContentView: View {
             // Fixed Action Buttons at bottom
             actionButtonsSection
         }
-        .background(Color.designBackground)
         .sheet(isPresented: $showingSourcePicker) {
             CustomMusicPickerView(title: "Select Source Track") { item in
                 viewModel.selectSourceTrack(item)
@@ -334,7 +334,6 @@ struct ContentView: View {
                 )
             }
         }
-        .background(Color.designBackground)
     }
     
     private func checkMusicLibraryPermission() {

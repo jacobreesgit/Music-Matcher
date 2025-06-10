@@ -4,7 +4,7 @@ import MediaPlayer
 struct ScanTabView: View {
     @ObservedObject var scanViewModel: ScanViewModel
     @StateObject private var musicRepeaterViewModel = MusicRepeaterViewModel()
-    @ObservedObject private var ignoredItemsManager = IgnoredItemsManager.shared // Changed from @StateObject
+    @ObservedObject private var ignoredItemsManager = IgnoredItemsManager.shared
     @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
     @State private var selectedGroup: ScanViewModel.DuplicateGroup?
     @State private var showingProcessingView = false
@@ -26,21 +26,22 @@ struct ScanTabView: View {
             .navigationTitle(musicLibraryPermission == .authorized ? "Smart Scan" : "")
             .navigationBarTitleDisplayMode(.large)
             .navigationBarHidden(musicLibraryPermission != .authorized)
-            .onAppear {
-                checkMusicLibraryPermission()
+        }
+        .navigationViewStyle(StackNavigationViewStyle()) // Force single view on iPad
+        .onAppear {
+            checkMusicLibraryPermission()
+        }
+        .sheet(item: $selectedGroup) { group in
+            DuplicateGroupDetailView(
+                group: group,
+                musicRepeaterViewModel: musicRepeaterViewModel,
+                scanViewModel: scanViewModel
+            ) {
+                selectedGroup = nil
             }
-            .sheet(item: $selectedGroup) { group in
-                DuplicateGroupDetailView(
-                    group: group,
-                    musicRepeaterViewModel: musicRepeaterViewModel,
-                    scanViewModel: scanViewModel
-                ) {
-                    selectedGroup = nil
-                }
-            }
-            .fullScreenCover(isPresented: $musicRepeaterViewModel.showingProcessingView) {
-                ProcessingView(viewModel: musicRepeaterViewModel)
-            }
+        }
+        .fullScreenCover(isPresented: $musicRepeaterViewModel.showingProcessingView) {
+            ProcessingView(viewModel: musicRepeaterViewModel)
         }
     }
     
@@ -128,9 +129,9 @@ struct ScanTabView: View {
     }
     
     private var resultsView: some View {
-        VStack(spacing: 0) {
-            // Results Summary Header
-            VStack(spacing: AppSpacing.medium) {
+        ScrollView {
+            VStack(spacing: AppSpacing.large) {
+                // Results Summary Header (now scrolls with content)
                 AppCard {
                     VStack(spacing: AppSpacing.medium) {
                         HStack {
@@ -207,18 +208,18 @@ struct ScanTabView: View {
                 }
                 .padding(.horizontal)
                 .padding(.top)
-            }
-            
-            // Results List
-            if scanViewModel.duplicateGroups.isEmpty {
-                emptyResultsView
-            } else {
-                duplicateGroupsList
+                
+                // Results Content
+                if scanViewModel.duplicateGroups.isEmpty {
+                    emptyResultsContent
+                } else {
+                    duplicateGroupsContent
+                }
             }
         }
     }
     
-    private var emptyResultsView: some View {
+    private var emptyResultsContent: some View {
         VStack(spacing: AppSpacing.large) {
             Spacer()
             
@@ -238,21 +239,19 @@ struct ScanTabView: View {
             
             Spacer()
         }
+        .frame(minHeight: 300) // Ensure adequate height for the empty state
     }
     
-    private var duplicateGroupsList: some View {
-        ScrollView {
-            LazyVStack(spacing: AppSpacing.medium) {
-                ForEach(scanViewModel.duplicateGroups) { group in
-                    DuplicateGroupRow(group: group) {
-                        selectedGroup = group
-                    }
+    private var duplicateGroupsContent: some View {
+        LazyVStack(spacing: AppSpacing.medium) {
+            ForEach(scanViewModel.duplicateGroups) { group in
+                DuplicateGroupRow(group: group) {
+                    selectedGroup = group
                 }
             }
-            .padding(.horizontal)
-            .padding(.top, AppSpacing.medium)
-            .padding(.bottom, AppSpacing.large)
         }
+        .padding(.horizontal)
+        .padding(.bottom, AppSpacing.large)
     }
     
     private var permissionView: some View {
