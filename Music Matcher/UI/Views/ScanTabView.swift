@@ -5,7 +5,7 @@ struct ScanTabView: View {
     @ObservedObject var scanViewModel: ScanViewModel
     @StateObject private var musicMatcherViewModel = MusicMatcherViewModel()
     @ObservedObject private var ignoredItemsManager = IgnoredItemsManager.shared
-    @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
+    @EnvironmentObject var appStateManager: AppStateManager
     @State private var selectedGroup: ScanViewModel.DuplicateGroup?
     @State private var showingProcessingView = false
     
@@ -16,20 +16,21 @@ struct ScanTabView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                if musicLibraryPermission == .authorized {
+                if appStateManager.musicPermissionStatus == .authorized {
                     authorizedView
                 } else {
                     permissionView
                 }
             }
             .background(Color.designBackground)
-            .navigationTitle(musicLibraryPermission == .authorized ? "Smart Scan" : "")
+            .navigationTitle(appStateManager.musicPermissionStatus == .authorized ? "Smart Scan" : "")
             .navigationBarTitleDisplayMode(.large)
-            .navigationBarHidden(musicLibraryPermission != .authorized)
+            .navigationBarHidden(appStateManager.musicPermissionStatus != .authorized)
         }
         .navigationViewStyle(StackNavigationViewStyle()) // Force single view on iPad
-        .onAppear {
-            checkMusicLibraryPermission()
+        .task {
+            // Update permission status if needed
+            await appStateManager.updateMusicPermissionStatus()
         }
         .sheet(item: $selectedGroup) { group in
             DuplicateGroupDetailView(
@@ -175,14 +176,12 @@ struct ScanTabView: View {
     }
     
     // MARK: - Helper Methods
-    private func checkMusicLibraryPermission() {
-        musicLibraryPermission = MPMediaLibrary.authorizationStatus()
-    }
-    
     private func requestMusicLibraryAccess() {
         MPMediaLibrary.requestAuthorization { status in
-            DispatchQueue.main.async {
-                musicLibraryPermission = status
+            Task {
+                await MainActor.run {
+                    appStateManager.musicPermissionStatus = status
+                }
             }
         }
     }

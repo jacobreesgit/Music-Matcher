@@ -4,52 +4,38 @@ import MediaPlayer
 struct MainTabView: View {
     @State private var selectedTab: Int = 0
     @StateObject private var scanViewModel = ScanViewModel()
-    @State private var hasTriggeredAutoScan = false
-    @ObservedObject private var shortcutActionManager = ShortcutActionManager.shared // Changed from @StateObject
+    @EnvironmentObject var appStateManager: AppStateManager
+    @EnvironmentObject var shortcutActionManager: ShortcutActionManager
     
     var body: some View {
         TabView(selection: $selectedTab) {
             ContentView(onNavigateToScan: {
                 selectedTab = 1
             })
-                .tabItem {
-                    Image(systemName: "music.note")
-                        .accessibilityLabel("Music Matcher")
-                    Text("Matcher")
-                        .font(AppFont.caption)
-                }
-                .tag(0)
+            .tabItem {
+                Label("Matcher", systemImage: "music.note")
+            }
+            .tag(0)
             
             ScanTabView(scanViewModel: scanViewModel)
                 .tabItem {
-                    Image(systemName: "magnifyingglass.circle")
-                        .accessibilityLabel("Smart Scan")
-                    Text("Smart Scan")
-                        .font(AppFont.caption)
+                    Label("Smart Scan", systemImage: "magnifyingglass.circle")
                 }
                 .tag(1)
             
             SettingsView()
                 .tabItem {
-                    Image(systemName: "gear")
-                        .accessibilityLabel("Settings")
-                    Text("Settings")
-                        .font(AppFont.caption)
+                    Label("Settings", systemImage: "gear")
                 }
                 .tag(2)
         }
         .accentColor(Color.designPrimary)
-        .onAppear {
-            // Configure native iOS tab bar appearance for glassy effect
-            let tabBarAppearance = UITabBarAppearance()
-            tabBarAppearance.configureWithDefaultBackground()
+        .task {
+            // Configure tab bar appearance asynchronously
+            await configureTabBarAppearance()
             
-            // This gives the native iOS translucent/glassy effect
-            UITabBar.appearance().standardAppearance = tabBarAppearance
-            UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
-            
-            // Trigger auto-scan if we have permission and haven't done it yet
-            triggerAutoScanIfNeeded()
+            // Trigger auto-scan if needed (after a delay)
+            await triggerAutoScanIfNeeded()
         }
         .onChange(of: shortcutActionManager.shouldTriggerScan) { _, shouldTrigger in
             if shouldTrigger {
@@ -58,22 +44,30 @@ struct MainTabView: View {
         }
     }
     
-    private func triggerAutoScanIfNeeded() {
-        guard !hasTriggeredAutoScan else { return }
+    @MainActor
+    private func configureTabBarAppearance() async {
+        let tabBarAppearance = UITabBarAppearance()
+        tabBarAppearance.configureWithDefaultBackground()
         
-        let permission = MPMediaLibrary.authorizationStatus()
-        print("🎵 MainTabView: Checking music library permission status: \(permission.rawValue)")
+        UITabBar.appearance().standardAppearance = tabBarAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+    }
+    
+    @MainActor
+    private func triggerAutoScanIfNeeded() async {
+        // Don't auto-scan if already done
+        guard !appStateManager.hasCompletedInitialScan else { return }
         
-        if permission == .authorized {
-            hasTriggeredAutoScan = true
-            print("🔄 MainTabView: Music library access granted, triggering auto-scan in 1 second...")
-            // Small delay to ensure the app is fully loaded
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                print("🚀 MainTabView: Starting auto-scan now...")
-                scanViewModel.startScan()
-            }
+        // Wait for app to be fully loaded
+        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+        
+        // Check permission and scan
+        if appStateManager.musicPermissionStatus == .authorized {
+            appStateManager.hasCompletedInitialScan = true
+            print("🚀 MainTabView: Starting auto-scan after delay...")
+            scanViewModel.startScan()
         } else {
-            print("❌ MainTabView: Music library access not granted (status: \(permission.rawValue)), auto-scan skipped")
+            print("❌ MainTabView: Music library access not granted, auto-scan skipped")
         }
     }
     
@@ -83,10 +77,8 @@ struct MainTabView: View {
         // Navigate to Smart Scan tab
         selectedTab = 1
         
-        // Check for music library permission
-        let permission = MPMediaLibrary.authorizationStatus()
-        if permission == .authorized {
-            // Small delay to ensure tab switch is complete
+        if appStateManager.musicPermissionStatus == .authorized {
+            // Delay to ensure tab switch completes
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 print("🚀 MainTabView: Starting Smart Scan from shortcut...")
                 scanViewModel.startScan()

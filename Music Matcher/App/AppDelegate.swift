@@ -2,6 +2,18 @@ import UIKit
 import SwiftUI
 
 class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        // Preload resources early
+        ResourcePreloader.shared.preloadResources()
+        
+        // Handle shortcut item if app was launched via shortcut
+        if let shortcutItem = launchOptions?[.shortcutItem] as? UIApplicationShortcutItem {
+            ShortcutActionManager.shared.handleShortcutItem(shortcutItem)
+        }
+        
+        return true
+    }
+    
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         
         // Handle shortcut item if app was launched via shortcut

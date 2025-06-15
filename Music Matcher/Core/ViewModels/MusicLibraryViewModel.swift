@@ -7,7 +7,13 @@ class MusicLibraryViewModel: ObservableObject {
     @Published var filteredSongs: [MPMediaItem] = []
     @Published var searchText: String = "" {
         didSet {
-            filterSongs()
+            // Debounce search
+            searchWorkItem?.cancel()
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.filterSongs()
+            }
+            searchWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
         }
     }
     @Published var isLoading: Bool = false
@@ -33,9 +39,12 @@ class MusicLibraryViewModel: ObservableObject {
     }
     
     private var cancellables = Set<AnyCancellable>()
+    private var searchWorkItem: DispatchWorkItem?
+    private var loadingTask: Task<Void, Never>?
     
     init() {
-        loadMusicLibrary()
+        // Load asynchronously
+        loadMusicLibraryAsync()
         
         // Observe sort option changes
         $sortOption
@@ -45,43 +54,67 @@ class MusicLibraryViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
+    deinit {
+        loadingTask?.cancel()
+        searchWorkItem?.cancel()
+    }
+    
     func loadMusicLibrary() {
-        isLoading = true
-        
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            // Create a query for all songs
-            let query = MPMediaQuery.songs()
-            
-            // Get all items
-            let items = query.items ?? []
-            
-            DispatchQueue.main.async {
-                self?.allSongs = items
-                self?.sortSongs()
-                self?.filterSongs()
-                self?.isLoading = false
-            }
-        }
+        loadMusicLibraryAsync()
     }
     
     func refreshLibrary() {
-        loadMusicLibrary()
+        loadMusicLibraryAsync()
+    }
+    
+    private func loadMusicLibraryAsync() {
+        loadingTask?.cancel()
+        
+        loadingTask = Task {
+            await loadLibrary()
+        }
+    }
+    
+    @MainActor
+    private func loadLibrary() async {
+        isLoading = true
+        
+        // Load in background
+        let items = await Task.detached(priority: .userInitiated) {
+            MPMediaQuery.songs().items ?? []
+        }.value
+        
+        // Update UI
+        allSongs = items
+        sortSongs()
+        filterSongs()
+        isLoading = false
     }
     
     private func filterSongs() {
         if searchText.isEmpty {
             filteredSongs = allSongs
         } else {
-            let searchLower = searchText.lowercased()
-            filteredSongs = allSongs.filter { song in
-                let title = song.title?.lowercased() ?? ""
-                let artist = song.artist?.lowercased() ?? ""
-                let album = song.albumTitle?.lowercased() ?? ""
-                
-                return title.contains(searchLower) ||
-                       artist.contains(searchLower) ||
-                       album.contains(searchLower)
+            // Perform filtering in background for large libraries
+            Task {
+                let filtered = await filterSongsAsync(searchText: searchText)
+                await MainActor.run {
+                    self.filteredSongs = filtered
+                }
             }
+        }
+    }
+    
+    private func filterSongsAsync(searchText: String) async -> [MPMediaItem] {
+        let searchLower = searchText.lowercased()
+        return allSongs.filter { song in
+            let title = song.title?.lowercased() ?? ""
+            let artist = song.artist?.lowercased() ?? ""
+            let album = song.albumTitle?.lowercased() ?? ""
+            
+            return title.contains(searchLower) ||
+                   artist.contains(searchLower) ||
+                   album.contains(searchLower)
         }
     }
     

@@ -7,8 +7,7 @@ struct ContentView: View {
     @State private var showingTargetPicker = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
-    @State private var musicLibraryPermission: MPMediaLibraryAuthorizationStatus = .notDetermined
-    @State private var hasCheckedPermission = false
+    @EnvironmentObject var appStateManager: AppStateManager
     
     let onNavigateToScan: () -> Void
     
@@ -19,22 +18,20 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                if musicLibraryPermission == .authorized {
+                if appStateManager.musicPermissionStatus == .authorized {
                     authorizedView
                 } else {
                     permissionRequestView
                 }
             }
             .background(Color.designBackground)
-            .navigationTitle(musicLibraryPermission == .authorized ? "Music Matcher" : "")
+            .navigationTitle(appStateManager.musicPermissionStatus == .authorized ? "Music Matcher" : "")
             .navigationBarTitleDisplayMode(.large)
-            .navigationBarHidden(musicLibraryPermission != .authorized)
+            .navigationBarHidden(appStateManager.musicPermissionStatus != .authorized)
         }
-        .onAppear {
-            if !hasCheckedPermission {
-                checkMusicLibraryPermission()
-                hasCheckedPermission = true
-            }
+        .task {
+            // Update permission status if needed
+            await appStateManager.updateMusicPermissionStatus()
         }
         .onReceive(viewModel.$alertMessage) { message in
             if !message.isEmpty {
@@ -77,9 +74,11 @@ struct ContentView: View {
                                 mode: .selection,
                                 action: .select,
                                 placeholderTitle: "Choose Source Track",
-                                placeholderSubtitle: "Tap to select from your music library", onSecondaryAction:  {
-                                showingSourcePicker = true
-                            })
+                                placeholderSubtitle: "Tap to select from your music library",
+                                onAction: {
+                                    showingSourcePicker = true
+                                }
+                            )
                         }
                         
                         // Target Track Section
@@ -91,9 +90,11 @@ struct ContentView: View {
                                 mode: .selection,
                                 action: .select,
                                 placeholderTitle: "Choose Target Track",
-                                placeholderSubtitle: "Tap to select from your music library", onSecondaryAction:  {
-                                showingTargetPicker = true
-                            })
+                                placeholderSubtitle: "Tap to select from your music library",
+                                onAction: {
+                                    showingTargetPicker = true
+                                }
+                            )
                         }
                     }
                     .padding(.horizontal)
@@ -193,7 +194,7 @@ struct ContentView: View {
     // MARK: - Permission Request View
     private var permissionRequestView: some View {
         Group {
-            if musicLibraryPermission == .denied {
+            if appStateManager.musicPermissionStatus == .denied {
                 AppPermissionScreen(
                     icon: "music.note.house",
                     title: "Music Library Access",
@@ -206,7 +207,7 @@ struct ContentView: View {
                     },
                     statusMessage: "To use Music Matcher, please enable Music access in Settings → Privacy & Security → Media & Apple Music → Music Matcher"
                 )
-            } else if musicLibraryPermission == .restricted {
+            } else if appStateManager.musicPermissionStatus == .restricted {
                 AppPermissionScreen(
                     icon: "music.note.house",
                     title: "Music Library Access",
@@ -239,10 +240,6 @@ struct ContentView: View {
     }
     
     // MARK: - Helper Methods
-    private func checkMusicLibraryPermission() {
-        musicLibraryPermission = MPMediaLibrary.authorizationStatus()
-    }
-    
     private func matchPlayCount() {
         if viewModel.sourceTrack == nil {
             alertMessage = "Please select the source track first."
@@ -289,10 +286,9 @@ struct ContentView: View {
     
     private func requestMusicLibraryAccess() {
         MPMediaLibrary.requestAuthorization { status in
-            DispatchQueue.main.async {
-                musicLibraryPermission = status
-                if status != .authorized {
-                    // Don't show additional alert since the UI already shows the status
+            Task {
+                await MainActor.run {
+                    appStateManager.musicPermissionStatus = status
                 }
             }
         }

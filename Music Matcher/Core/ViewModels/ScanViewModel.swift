@@ -12,6 +12,7 @@ class ScanViewModel: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     private let ignoredItemsManager = IgnoredItemsManager.shared
+    private var scanTask: Task<Void, Never>?
     
     struct DuplicateGroup: Identifiable, Codable {
         let id: UUID
@@ -74,6 +75,10 @@ class ScanViewModel: ObservableObject {
         }
     }
     
+    deinit {
+        scanTask?.cancel()
+    }
+    
     func startScan() {
         guard !isScanning else {
             print("🔍 ScanViewModel: Scan already in progress, ignoring duplicate call")
@@ -82,6 +87,9 @@ class ScanViewModel: ObservableObject {
         
         print("🔍 ScanViewModel: Starting music library scan...")
         
+        // Cancel any existing scan
+        scanTask?.cancel()
+        
         isScanning = true
         scanProgress = 0.0
         duplicateGroups = []
@@ -89,58 +97,71 @@ class ScanViewModel: ObservableObject {
         totalSongsScanned = 0
         duplicatesFound = 0
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.performScan()
+        // Start async scan
+        scanTask = Task(priority: .userInitiated) {
+            await performScanAsync()
         }
     }
     
-    private func performScan() {
-        // Get all songs from library
-        let query = MPMediaQuery.songs()
-        let allSongs = query.items ?? []
+    @MainActor
+    private func performScanAsync() async {
+        // Get songs in background
+        let allSongs = await Task.detached(priority: .userInitiated) {
+            MPMediaQuery.songs().items ?? []
+        }.value
         
         print("🎵 ScanViewModel: Retrieved \(allSongs.count) songs from music library")
+        totalSongsScanned = allSongs.count
         
-        DispatchQueue.main.async {
-            self.totalSongsScanned = allSongs.count
-        }
-        
-        // Group songs by title and artist combination
+        // Process in chunks to keep UI responsive
+        let chunkSize = 100
+        var processedCount = 0
         var songGroups: [String: [MPMediaItem]] = [:]
         
-        for (index, song) in allSongs.enumerated() {
-            // Update progress (throttled by the UI component)
-            let progress = Double(index) / Double(allSongs.count)
-            DispatchQueue.main.async {
-                self.scanProgress = progress
+        for chunk in allSongs.chunked(into: chunkSize) {
+            // Check for cancellation
+            guard !Task.isCancelled else {
+                print("❌ ScanViewModel: Scan cancelled")
+                isScanning = false
+                return
             }
             
-            // Skip songs that are individually ignored
-            if ignoredItemsManager.shouldIgnoreSong(song.persistentID) {
-                continue
+            // Process chunk
+            for song in chunk {
+                // Skip songs that are individually ignored
+                if ignoredItemsManager.shouldIgnoreSong(song.persistentID) {
+                    continue
+                }
+                
+                // Create key from title and artist (case insensitive, trimmed)
+                let title = song.title?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+                let artist = song.artist?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+                
+                // Skip songs without proper title or artist
+                guard !title.isEmpty && !artist.isEmpty else { continue }
+                
+                // Skip if this entire group is ignored
+                if ignoredItemsManager.shouldIgnoreGroup(title: song.title ?? "", artist: song.artist ?? "") {
+                    continue
+                }
+                
+                let key = "\(title)|\(artist)"
+                
+                if songGroups[key] == nil {
+                    songGroups[key] = []
+                }
+                songGroups[key]?.append(song)
             }
             
-            // Create key from title and artist (case insensitive, trimmed)
-            let title = song.title?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
-            let artist = song.artist?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+            // Update progress
+            processedCount += chunk.count
+            scanProgress = Double(processedCount) / Double(allSongs.count)
             
-            // Skip songs without proper title or artist
-            guard !title.isEmpty && !artist.isEmpty else { continue }
-            
-            // Skip if this entire group is ignored
-            if ignoredItemsManager.shouldIgnoreGroup(title: song.title ?? "", artist: song.artist ?? "") {
-                continue
-            }
-            
-            let key = "\(title)|\(artist)"
-            
-            if songGroups[key] == nil {
-                songGroups[key] = []
-            }
-            songGroups[key]?.append(song)
+            // Yield to keep UI responsive
+            await Task.yield()
         }
         
-        // Filter for groups with multiple songs (potential duplicates)
+        // Process results
         let duplicates = songGroups.compactMap { (key, songs) -> DuplicateGroup? in
             guard songs.count > 1 else { return nil }
             
@@ -168,30 +189,28 @@ class ScanViewModel: ObservableObject {
             return impact1 > impact2
         }
         
-        // Update UI on main thread
-        DispatchQueue.main.async {
-            self.duplicateGroups = sortedDuplicates
-            self.duplicatesFound = sortedDuplicates.count
-            self.scanProgress = 1.0
-            self.isScanning = false
-            self.scanComplete = true
-            
-            let totalDuplicateSongs = sortedDuplicates.reduce(0) { $0 + $1.songs.count }
-            let ignoredCount = self.ignoredItemsManager.totalIgnoredItems
-            
-            print("✅ ScanViewModel: Scan completed!")
-            print("📊 ScanViewModel: Found \(sortedDuplicates.count) duplicate groups containing \(totalDuplicateSongs) total songs out of \(allSongs.count) scanned")
-            
+        // Update UI
+        duplicateGroups = sortedDuplicates
+        duplicatesFound = sortedDuplicates.count
+        scanProgress = 1.0
+        isScanning = false
+        scanComplete = true
+        
+        let totalDuplicateSongs = sortedDuplicates.reduce(0) { $0 + $1.songs.count }
+        let ignoredCount = ignoredItemsManager.totalIgnoredItems
+        
+        print("✅ ScanViewModel: Scan completed!")
+        print("📊 ScanViewModel: Found \(sortedDuplicates.count) duplicate groups containing \(totalDuplicateSongs) total songs out of \(allSongs.count) scanned")
+        
+        if ignoredCount > 0 {
+            print("🚫 ScanViewModel: \(ignoredCount) items were ignored from previous removals")
+        }
+        
+        if sortedDuplicates.isEmpty {
             if ignoredCount > 0 {
-                print("🚫 ScanViewModel: \(ignoredCount) items were ignored from previous removals")
-            }
-            
-            if sortedDuplicates.isEmpty {
-                if ignoredCount > 0 {
-                    print("🎉 ScanViewModel: No new duplicates found - remaining library is clean!")
-                } else {
-                    print("🎉 ScanViewModel: No duplicates found - library is clean!")
-                }
+                print("🎉 ScanViewModel: No new duplicates found - remaining library is clean!")
+            } else {
+                print("🎉 ScanViewModel: No duplicates found - library is clean!")
             }
         }
     }
@@ -272,5 +291,14 @@ class ScanViewModel: ObservableObject {
     
     var totalIgnoredItems: Int {
         return ignoredItemsManager.totalIgnoredItems
+    }
+}
+
+// MARK: - Array Extension for Chunking
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
     }
 }
