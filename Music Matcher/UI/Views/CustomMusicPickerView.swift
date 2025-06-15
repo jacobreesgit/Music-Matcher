@@ -141,12 +141,11 @@ struct CustomMusicPickerView: View {
                         isSelected: selectedSong?.persistentID == song.persistentID,
                         showPlayCount: true,
                         showDuration: true,
-                        showDateAdded: viewModel.sortOption == .dateAdded
-                    ) {
+                        showDateAdded: viewModel.sortOption == .dateAdded, onSecondaryAction:  {
                         selectedSong = song
                         onSelection(song)
                         presentationMode.wrappedValue.dismiss()
-                    }
+                    })
                 }
             }
             .padding(.bottom, AppSpacing.medium)

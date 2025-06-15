@@ -77,10 +77,9 @@ struct ContentView: View {
                                 mode: .selection,
                                 action: .select,
                                 placeholderTitle: "Choose Source Track",
-                                placeholderSubtitle: "Tap to select from your music library"
-                            ) {
+                                placeholderSubtitle: "Tap to select from your music library", onSecondaryAction:  {
                                 showingSourcePicker = true
-                            }
+                            })
                         }
                         
                         // Target Track Section
@@ -92,10 +91,9 @@ struct ContentView: View {
                                 mode: .selection,
                                 action: .select,
                                 placeholderTitle: "Choose Target Track",
-                                placeholderSubtitle: "Tap to select from your music library"
-                            ) {
+                                placeholderSubtitle: "Tap to select from your music library", onSecondaryAction:  {
                                 showingTargetPicker = true
-                            }
+                            })
                         }
                     }
                     .padding(.horizontal)

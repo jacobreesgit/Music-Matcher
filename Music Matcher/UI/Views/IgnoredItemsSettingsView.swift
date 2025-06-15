@@ -181,12 +181,11 @@ struct IgnoredItemsSettingsView: View {
                             action: .restore,
                             showPlayCount: false,
                             placeholderTitle: songDetail.songTitle,
-                            placeholderSubtitle: songDetail.artistName
-                        ) {
+                            placeholderSubtitle: songDetail.artistName, onSecondaryAction:  {
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 ignoredItemsManager.restoreSong(songDetail.songId)
                             }
-                        }
+                        })
                     }
                 }
                 .padding(.horizontal)

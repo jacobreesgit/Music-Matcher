@@ -192,11 +192,10 @@ struct DuplicateGroupCard: View {
                     action: .none,
                     showPlayCount: true,
                     showDuration: false,
-                    showDateAdded: false
-                ) {
+                    showDateAdded: false, onSecondaryAction:  {
                     // No individual song action needed here
                     // The parent button handles the main action
-                }
+                })
             }
         }
     }

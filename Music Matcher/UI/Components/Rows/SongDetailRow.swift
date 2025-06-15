@@ -511,23 +511,20 @@ struct SongDetailRow_Previews: PreviewProvider {
                 mode: .selection,
                 action: .select,
                 placeholderTitle: "Choose Source Track",
-                placeholderSubtitle: "Tap to select from your music library"
-            ) {}
+                placeholderSubtitle: "Tap to select from your music library", onSecondaryAction:  {})
             
             // Version mode with selection
             SongDetailRow(
                 song: nil,
                 mode: .version,
                 action: .selectAsSource,
-                isSelected: true
-            ) {}
+                isSelected: true, onSecondaryAction:  {})
             
             // Ignored mode
             SongDetailRow(
                 song: nil,
                 mode: .ignored,
-                action: .restore
-            ) {}
+                action: .restore, onSecondaryAction:  {})
         }
         .padding()
         .background(Color.designBackground)
