@@ -51,42 +51,20 @@ struct ContentView: View {
     }
     
     private var authorizedView: some View {
-        VStack(spacing: 0) {
+        FixedActionButtonsContainer(
+            buttons: ActionButtonGroup.musicMatcherActions(
+                canPerformActions: viewModel.canPerformActions && !viewModel.isProcessing && !isSourceLessThanTarget,
+                onMatch: { matchPlayCount() },
+                onAdd: { addPlayCount() }
+            )
+        ) {
             ScrollView {
                 VStack(spacing: AppSpacing.large) {
                     // Tip about Smart Scan
                     if viewModel.sourceTrack == nil && viewModel.targetTrack == nil {
-                        Button(action: {
-                            onNavigateToScan()
-                        }) {
-                            AppCard {
-                                HStack {
-                                    Image(systemName: "lightbulb")
-                                        .font(AppFont.iconMedium)
-                                        .foregroundColor(Color.designInfo)
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Tip: Try Smart Scan!")
-                                            .font(AppFont.subheadline)
-                                            .fontWeight(.medium)
-                                            .foregroundColor(Color.designTextPrimary)
-                                        
-                                        Text("Automatically find duplicate songs across different albums")
-                                            .font(AppFont.caption)
-                                            .foregroundColor(Color.designTextSecondary)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .font(AppFont.iconSmall)
-                                        .foregroundColor(Color.designTextTertiary)
-                                }
-                            }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .appPadding(.horizontal)
-                        .padding(.top)
+                        smartScanTipCard
+                            .padding(.horizontal)
+                            .padding(.top)
                     }
                     
                     VStack(spacing: AppSpacing.large) {
@@ -94,12 +72,12 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             AppSectionHeader("Source Track", subtitle: "Track to copy play count from")
                             
-                            SongDisplayRow(
-                                track: viewModel.sourceTrack,
-                                icon: "music.note",
+                            SongDetailRow(
+                                song: viewModel.sourceTrack,
+                                mode: .selection,
+                                action: .select,
                                 placeholderTitle: "Choose Source Track",
-                                placeholderSubtitle: "Tap to select from your music library",
-                                style: .selection
+                                placeholderSubtitle: "Tap to select from your music library"
                             ) {
                                 showingSourcePicker = true
                             }
@@ -109,56 +87,39 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             AppSectionHeader("Target Track", subtitle: "Track to update play count for")
                             
-                            SongDisplayRow(
-                                track: viewModel.targetTrack,
-                                icon: "music.note.list",
+                            SongDetailRow(
+                                song: viewModel.targetTrack,
+                                mode: .selection,
+                                action: .select,
                                 placeholderTitle: "Choose Target Track",
-                                placeholderSubtitle: "Tap to select from your music library",
-                                style: .selection
+                                placeholderSubtitle: "Tap to select from your music library"
                             ) {
                                 showingTargetPicker = true
                             }
                         }
                     }
-                    .appPadding(.horizontal)
+                    .padding(.horizontal)
                     
-                    // Warning Banners (all at same width level)
-                    VStack(spacing: AppSpacing.medium) {
-                        // Same Song Warning
-                        if viewModel.isSameSong {
-                            AppWarningBanner("Warning: You've selected the same song for both source and target.")
-                        }
-                        
-                        // Play Count Warnings
-                        if let sourceTrack = viewModel.sourceTrack,
-                           let targetTrack = viewModel.targetTrack,
-                           !viewModel.isSameSong {
-                            
-                            if sourceTrack.playCount == targetTrack.playCount {
-                                AppWarningBanner("Both tracks have the same play count (\(sourceTrack.playCount)). No additional plays are needed.", icon: "exclamationmark.triangle.fill")
-                            } else if sourceTrack.playCount < targetTrack.playCount {
-                                AppWarningBanner("Source track has fewer plays (\(sourceTrack.playCount)) than target track (\(targetTrack.playCount)). Consider swapping the tracks or selecting a different source.", icon: "exclamationmark.triangle.fill")
-                            }
-                        }
-                    }
-                    .appPadding(.horizontal)
+                    // Warning Banners
+                    warningBannersSection
+                        .padding(.horizontal)
                     
-                    // Track Comparison Section (only show when source has more plays than target)
+                    // Track Comparison Section
                     if let sourceTrack = viewModel.sourceTrack,
                        let targetTrack = viewModel.targetTrack,
                        !viewModel.isSameSong,
                        sourceTrack.playCount > targetTrack.playCount {
-                        trackComparisonSection(source: sourceTrack, target: targetTrack)
-                            .appPadding(.horizontal)
+                        PlayCountComparison(
+                            sourceTrack: sourceTrack,
+                            targetTrack: targetTrack
+                        )
+                        .padding(.horizontal)
                     }
                     
-                    // Add bottom spacing for safe area
+                    // Add bottom spacing for fixed buttons
                     Spacer(minLength: 140)
                 }
             }
-            
-            // Fixed Action Buttons at bottom
-            actionButtonsSection
         }
         .sheet(isPresented: $showingSourcePicker) {
             CustomMusicPickerView(title: "Select Source Track") { item in
@@ -175,129 +136,63 @@ struct ContentView: View {
         }
     }
     
+    // MARK: - Smart Scan Tip Card
+    private var smartScanTipCard: some View {
+        Button(action: {
+            onNavigateToScan()
+        }) {
+            AppCard {
+                HStack {
+                    Image(systemName: "lightbulb")
+                        .font(AppFont.iconMedium)
+                        .foregroundColor(Color.designInfo)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Tip: Try Smart Scan!")
+                            .font(AppFont.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(Color.designTextPrimary)
+                        
+                        Text("Automatically find duplicate songs across different albums")
+                            .font(AppFont.caption)
+                            .foregroundColor(Color.designTextSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.iconSmall)
+                        .foregroundColor(Color.designTextTertiary)
+                }
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - Warning Banners Section
     @ViewBuilder
-    private func trackComparisonSection(source: MPMediaItem, target: MPMediaItem) -> some View {
-        AppCard {
-            VStack(spacing: AppSpacing.medium) {
-                AppSectionHeader("Play Count Comparison")
+    private var warningBannersSection: some View {
+        VStack(spacing: AppSpacing.medium) {
+            // Same Song Warning
+            if viewModel.isSameSong {
+                AppWarningBanner("Warning: You've selected the same song for both source and target.")
+            }
+            
+            // Play Count Warnings
+            if let sourceTrack = viewModel.sourceTrack,
+               let targetTrack = viewModel.targetTrack,
+               !viewModel.isSameSong {
                 
-                HStack(spacing: AppSpacing.medium) {
-                    // Source track mini info
-                    VStack(spacing: AppSpacing.small) {
-                        Text("Source")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                        
-                        Text("\(source.playCount)")
-                            .font(AppFont.counterMedium)
-                            .foregroundColor(Color.designPrimary)
-                        
-                        Text("plays")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    
-                    // Arrow and difference
-                    VStack(spacing: 4) {
-                        Image(systemName: "arrow.right")
-                            .font(AppFont.iconMedium)
-                            .foregroundColor(Color.designTextSecondary)
-                        
-                        let difference = source.playCount - target.playCount
-                        Text("+\(difference)")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designSecondary)
-                    }
-                    
-                    // Target track mini info
-                    VStack(spacing: AppSpacing.small) {
-                        Text("Target")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                        
-                        Text("\(target.playCount)")
-                            .font(AppFont.counterMedium)
-                            .foregroundColor(Color.designSecondary)
-                        
-                        Text("plays")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                
-                // Action Previews
-                Divider()
-                    .background(Color.designTextTertiary)
-                
-                VStack(spacing: AppSpacing.small) {
-                    HStack {
-                        Text("Match:")
-                            .font(AppFont.subheadline)
-                            .foregroundColor(Color.designTextSecondary)
-                        
-                        Spacer()
-                        
-                        Text("\(target.playCount) → \(source.playCount)")
-                            .font(AppFont.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(Color.designPrimary)
-                    }
-                    
-                    HStack {
-                        Text("Add:")
-                            .font(AppFont.subheadline)
-                            .foregroundColor(Color.designTextSecondary)
-                        
-                        Spacer()
-                        
-                        Text("\(target.playCount) → \(target.playCount + source.playCount)")
-                            .font(AppFont.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(Color.designSecondary)
-                    }
+                if sourceTrack.playCount == targetTrack.playCount {
+                    AppWarningBanner("Both tracks have the same play count (\(sourceTrack.playCount)). No additional plays are needed.", icon: "exclamationmark.triangle.fill")
+                } else if sourceTrack.playCount < targetTrack.playCount {
+                    AppWarningBanner("Source track has fewer plays (\(sourceTrack.playCount)) than target track (\(targetTrack.playCount)). Consider swapping the tracks or selecting a different source.", icon: "exclamationmark.triangle.fill")
                 }
             }
         }
     }
     
-    private var actionButtonsSection: some View {
-        VStack(spacing: AppSpacing.small) {
-            HStack(spacing: AppSpacing.medium) {
-                // Match Play Count Button
-                AppPrimaryButton(
-                    "Match",
-                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing && !isSourceLessThanTarget
-                ) {
-                    matchPlayCount()
-                }
-                
-                // Add Play Count Button
-                AppSecondaryButton(
-                    "Add",
-                    isEnabled: viewModel.canPerformActions && !viewModel.isProcessing && !isSourceLessThanTarget
-                ) {
-                    addPlayCount()
-                }
-            }
-            .appPadding(.horizontal)
-        }
-        .padding(.bottom, AppSpacing.medium)
-        .background(
-            Color.designBackground
-                .ignoresSafeArea(edges: .bottom)
-        )
-    }
-    
-    private var isSourceLessThanTarget: Bool {
-        guard let sourceTrack = viewModel.sourceTrack,
-              let targetTrack = viewModel.targetTrack else {
-            return false
-        }
-        return sourceTrack.playCount <= targetTrack.playCount
-    }
-    
+    // MARK: - Permission Request View
     private var permissionRequestView: some View {
         Group {
             if musicLibraryPermission == .denied {
@@ -336,6 +231,16 @@ struct ContentView: View {
         }
     }
     
+    // MARK: - Computed Properties
+    private var isSourceLessThanTarget: Bool {
+        guard let sourceTrack = viewModel.sourceTrack,
+              let targetTrack = viewModel.targetTrack else {
+            return false
+        }
+        return sourceTrack.playCount <= targetTrack.playCount
+    }
+    
+    // MARK: - Helper Methods
     private func checkMusicLibraryPermission() {
         musicLibraryPermission = MPMediaLibrary.authorizationStatus()
     }

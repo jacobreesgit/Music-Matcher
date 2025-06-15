@@ -57,6 +57,7 @@ struct ScanTabView: View {
         }
     }
     
+    // MARK: - Initial View
     private var initialView: some View {
         VStack(spacing: AppSpacing.xl) {
             Spacer()
@@ -87,125 +88,37 @@ struct ScanTabView: View {
         }
     }
     
+    // MARK: - Scanning View
     private var scanningView: some View {
         VStack(spacing: AppSpacing.xl) {
             Spacer()
             
-            VStack(spacing: AppSpacing.large) {
-                Text("Scanning Library")
-                    .font(AppFont.title)
-                    .foregroundColor(Color.designTextPrimary)
-                
-                AppProgressRing(
-                    progress: scanViewModel.scanProgress,
-                    lineWidth: 10,
-                    size: 160
-                )
-                .overlay(
-                    VStack(spacing: 4) {
-                        Text("\(Int(scanViewModel.scanProgress * 100))%")
-                            .font(AppFont.counterMedium)
-                            .foregroundColor(Color.designTextPrimary)
-                        
-                        Text("complete")
-                            .font(AppFont.subheadline)
-                            .foregroundColor(Color.designTextSecondary)
-                    }
-                )
-                
-                VStack(spacing: AppSpacing.small) {
-                    Text("Analyzing \(scanViewModel.totalSongsScanned) songs")
-                        .font(AppFont.subheadline)
-                        .foregroundColor(Color.designTextSecondary)
-                    
-                    Text("Looking for duplicate titles across different albums")
-                        .font(AppFont.caption)
-                        .foregroundColor(Color.designTextTertiary)
-                }
-            }
+            ScanProgressView(
+                progress: scanViewModel.scanProgress,
+                totalSongsScanned: scanViewModel.totalSongsScanned,
+                isScanning: scanViewModel.isScanning,
+                style: .fullScreen
+            )
             
             Spacer()
         }
     }
     
+    // MARK: - Results View
     private var resultsView: some View {
         ScrollView {
             VStack(spacing: AppSpacing.large) {
-                // Results Summary Header (now scrolls with content)
-                AppCard {
-                    VStack(spacing: AppSpacing.medium) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Scan Complete")
-                                    .font(AppFont.headline)
-                                    .foregroundColor(Color.designTextPrimary)
-                                
-                                Text("Found potential duplicates")
-                                    .font(AppFont.subheadline)
-                                    .foregroundColor(Color.designTextSecondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Button("Rescan") {
-                                scanViewModel.startScan()
-                            }
-                            .font(AppFont.subheadline)
-                            .foregroundColor(Color.designPrimary)
-                        }
-                        
-                        HStack(spacing: AppSpacing.large) {
-                            VStack(spacing: 4) {
-                                Text("\(scanViewModel.totalSongsScanned)")
-                                    .font(AppFont.counterMedium)
-                                    .foregroundColor(Color.designTextPrimary)
-                                
-                                Text("songs scanned")
-                                    .font(AppFont.caption)
-                                    .foregroundColor(Color.designTextSecondary)
-                            }
-                            
-                            VStack(spacing: 4) {
-                                Text("\(scanViewModel.duplicatesFound)")
-                                    .font(AppFont.counterMedium)
-                                    .foregroundColor(Color.designPrimary)
-                                
-                                Text("duplicate groups")
-                                    .font(AppFont.caption)
-                                    .foregroundColor(Color.designTextSecondary)
-                            }
-                            
-                            VStack(spacing: 4) {
-                                let totalDuplicates = scanViewModel.duplicateGroups.reduce(0) { $0 + $1.songs.count }
-                                Text("\(totalDuplicates)")
-                                    .font(AppFont.counterMedium)
-                                    .foregroundColor(Color.designSecondary)
-                                
-                                Text("total songs")
-                                    .font(AppFont.caption)
-                                    .foregroundColor(Color.designTextSecondary)
-                            }
-                        }
-                        
-                        // Show ignored items indicator if any exist
-                        if ignoredItemsManager.hasIgnoredItems {
-                            Divider()
-                                .background(Color.designTextTertiary)
-                            
-                            HStack {
-                                Image(systemName: "eye.slash")
-                                    .font(AppFont.iconSmall)
-                                    .foregroundColor(Color.designInfo)
-                                
-                                Text("\(ignoredItemsManager.totalIgnoredItems) items ignored from previous removals")
-                                    .font(AppFont.caption)
-                                    .foregroundColor(Color.designInfo)
-                                
-                                Spacer()
-                            }
-                        }
+                // Results Summary Header
+                ScanSummaryCard(
+                    totalSongsScanned: scanViewModel.totalSongsScanned,
+                    duplicatesFound: scanViewModel.duplicatesFound,
+                    totalDuplicateSongs: scanViewModel.duplicateGroups.reduce(0) { $0 + $1.songs.count },
+                    totalIgnoredItems: ignoredItemsManager.totalIgnoredItems,
+                    showIgnoredItems: ignoredItemsManager.hasIgnoredItems,
+                    onRescan: {
+                        scanViewModel.startScan()
                     }
-                }
+                )
                 .padding(.horizontal)
                 .padding(.top)
                 
@@ -219,41 +132,36 @@ struct ScanTabView: View {
         }
     }
     
+    // MARK: - Empty Results Content
     private var emptyResultsContent: some View {
-        VStack(spacing: AppSpacing.large) {
-            Spacer()
-            
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 60))
-                .foregroundColor(Color.designSuccess)
-            
-            Text("No Duplicates Found")
-                .font(AppFont.title3)
-                .foregroundColor(Color.designTextPrimary)
-            
-            Text("Your music library doesn't contain songs with the same title and artist across different albums.")
-                .font(AppFont.body)
-                .foregroundColor(Color.designTextSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, AppSpacing.xl)
-            
-            Spacer()
-        }
-        .frame(minHeight: 300) // Ensure adequate height for the empty state
+        EmptyScanResultsCard(
+            totalSongsScanned: scanViewModel.totalSongsScanned,
+            hasIgnoredItems: ignoredItemsManager.hasIgnoredItems,
+            onRescan: {
+                scanViewModel.startScan()
+            }
+        )
+        .padding(.horizontal)
     }
     
+    // MARK: - Duplicate Groups Content
     private var duplicateGroupsContent: some View {
         LazyVStack(spacing: AppSpacing.medium) {
             ForEach(scanViewModel.duplicateGroups) { group in
-                DuplicateGroupRow(group: group) {
-                    selectedGroup = group
-                }
+                DuplicateGroupCard(
+                    group: group,
+                    state: .active,
+                    onAction: {
+                        selectedGroup = group
+                    }
+                )
             }
         }
         .padding(.horizontal)
         .padding(.bottom, AppSpacing.large)
     }
     
+    // MARK: - Permission View
     private var permissionView: some View {
         AppPermissionScreen(
             icon: "magnifyingglass.circle",
@@ -266,6 +174,7 @@ struct ScanTabView: View {
         )
     }
     
+    // MARK: - Helper Methods
     private func checkMusicLibraryPermission() {
         musicLibraryPermission = MPMediaLibrary.authorizationStatus()
     }

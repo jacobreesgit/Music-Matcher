@@ -2,7 +2,7 @@ import SwiftUI
 import MediaPlayer
 
 struct IgnoredItemsSettingsView: View {
-    @ObservedObject private var ignoredItemsManager = IgnoredItemsManager.shared // Changed from @StateObject
+    @ObservedObject private var ignoredItemsManager = IgnoredItemsManager.shared
     @Environment(\.presentationMode) var presentationMode
     @State private var selectedTab = 0
     @State private var showingClearAllAlert = false
@@ -34,7 +34,7 @@ struct IgnoredItemsSettingsView: View {
         NavigationView {
             VStack(spacing: 0) {
                 if !ignoredItemsManager.hasIgnoredItems {
-                    emptyStateView
+                    EmptyStateView.noIgnoredItems()
                 } else {
                     contentView
                 }
@@ -89,50 +89,38 @@ struct IgnoredItemsSettingsView: View {
         }
     }
     
-    private var emptyStateView: some View {
-        VStack(spacing: AppSpacing.xl) {
-            Spacer()
-            
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 80))
-                .foregroundColor(Color.designSuccess)
-            
-            VStack(spacing: AppSpacing.medium) {
-                Text("No Ignored Items")
-                    .font(AppFont.title)
-                    .foregroundColor(Color.designTextPrimary)
-                
-                Text("You haven't ignored any songs or groups from Smart Scan yet. When you remove items during scanning, they'll appear here.")
-                    .font(AppFont.body)
-                    .foregroundColor(Color.designTextSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, AppSpacing.xl)
-            }
-            
-            Spacer()
-        }
-    }
-    
+    // MARK: - Content View
     private var contentView: some View {
         VStack(spacing: 0) {
             // Summary Card
             summaryCard
             
-            // Tab Selector
-            tabSelector
-            
-            // Content based on selected tab
-            Group {
-                if selectedTab == 0 {
-                    ignoredSongsView
+            // Tab Content with Selector
+            TabContentView(
+                tabs: [
+                    TabSelector.TabItem(
+                        title: "Songs",
+                        count: ignoredItemsManager.ignoredSongs.count,
+                        color: Color.designPrimary
+                    ),
+                    TabSelector.TabItem(
+                        title: "Groups",
+                        count: ignoredItemsManager.ignoredGroups.count,
+                        color: Color.designSecondary
+                    )
+                ],
+                style: .underline
+            ) { tabIndex in
+                if tabIndex == 0 {
+                    ignoredSongsContent
                 } else {
-                    ignoredGroupsView
+                    ignoredGroupsContent
                 }
             }
-            .animation(.easeInOut(duration: 0.2), value: selectedTab) // Smooth tab transition
         }
     }
     
+    // MARK: - Summary Card
     private var summaryCard: some View {
         AppCard {
             VStack(spacing: AppSpacing.medium) {
@@ -145,38 +133,26 @@ struct IgnoredItemsSettingsView: View {
                 }
                 
                 HStack(spacing: AppSpacing.large) {
-                    VStack(spacing: 4) {
-                        Text("\(ignoredItemsManager.ignoredSongs.count)")
-                            .font(AppFont.counterMedium)
-                            .foregroundColor(Color.designPrimary)
-                        
-                        Text("songs")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
+                    MetricDisplay(
+                        value: "\(ignoredItemsManager.ignoredSongs.count)",
+                        label: "songs",
+                        color: Color.designPrimary,
+                        icon: "music.note"
+                    )
                     
-                    VStack(spacing: 4) {
-                        Text("\(ignoredItemsManager.ignoredGroups.count)")
-                            .font(AppFont.counterMedium)
-                            .foregroundColor(Color.designSecondary)
-                        
-                        Text("groups")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
+                    MetricDisplay(
+                        value: "\(ignoredItemsManager.ignoredGroups.count)",
+                        label: "groups",
+                        color: Color.designSecondary,
+                        icon: "music.note.list"
+                    )
                     
-                    VStack(spacing: 4) {
-                        Text("\(ignoredItemsManager.totalIgnoredItems)")
-                            .font(AppFont.counterMedium)
-                            .foregroundColor(Color.designInfo)
-                        
-                        Text("total")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
+                    MetricDisplay(
+                        value: "\(ignoredItemsManager.totalIgnoredItems)",
+                        label: "total",
+                        color: Color.designInfo,
+                        icon: "eye.slash"
+                    )
                 }
                 
                 Text("These items won't appear in future Smart Scans")
@@ -189,109 +165,66 @@ struct IgnoredItemsSettingsView: View {
         .padding(.top)
     }
     
-    private var tabSelector: some View {
-        HStack(spacing: 0) {
-            // Songs Tab
-            Button(action: { selectedTab = 0 }) {
-                VStack(spacing: 4) {
-                    Text("Songs (\(ignoredItemsManager.ignoredSongs.count))")
-                        .font(AppFont.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(selectedTab == 0 ? Color.designPrimary : Color.designTextSecondary)
-                    
-                    Rectangle()
-                        .fill(selectedTab == 0 ? Color.designPrimary : Color.clear)
-                        .frame(height: 2)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-            .frame(maxWidth: .infinity)
-            
-            // Groups Tab
-            Button(action: { selectedTab = 1 }) {
-                VStack(spacing: 4) {
-                    Text("Groups (\(ignoredItemsManager.ignoredGroups.count))")
-                        .font(AppFont.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(selectedTab == 1 ? Color.designSecondary : Color.designTextSecondary)
-                    
-                    Rectangle()
-                        .fill(selectedTab == 1 ? Color.designSecondary : Color.clear)
-                        .frame(height: 2)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-            .frame(maxWidth: .infinity)
-        }
-        .padding(.horizontal)
-        .padding(.top, AppSpacing.medium)
-    }
-    
-    private var ignoredSongsView: some View {
-        Group {
-            if ignoredItemsManager.ignoredSongs.isEmpty {
-                emptyTabView(icon: "music.note", message: "No ignored songs")
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: AppSpacing.medium) {
-                        ForEach(ignoredItemsManager.ignoredSongDetails) { songDetail in
-                            IgnoredSongCard(songDetail: songDetail) { songId in
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    ignoredItemsManager.restoreSong(songId)
-                                }
+    // MARK: - Ignored Songs Content
+    @ViewBuilder
+    private var ignoredSongsContent: some View {
+        if ignoredItemsManager.ignoredSongs.isEmpty {
+            EmptyStateView.noIgnoredSongs()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(ignoredItemsManager.ignoredSongDetails) { songDetail in
+                        SongDetailRow(
+                            song: nil, // We don't have the actual MPMediaItem, just details
+                            mode: .ignored,
+                            action: .restore,
+                            showPlayCount: false,
+                            placeholderTitle: songDetail.songTitle,
+                            placeholderSubtitle: songDetail.artistName
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                ignoredItemsManager.restoreSong(songDetail.songId)
                             }
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.top, AppSpacing.medium)
-                    .padding(.bottom, AppSpacing.large)
                 }
+                .padding(.horizontal)
+                .padding(.top, AppSpacing.medium)
+                .padding(.bottom, AppSpacing.large)
             }
         }
     }
     
-    private var ignoredGroupsView: some View {
-        Group {
-            if ignoredItemsManager.ignoredGroups.isEmpty {
-                emptyTabView(icon: "music.note.list", message: "No ignored groups")
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: AppSpacing.medium) {
-                        ForEach(ignoredItemsManager.ignoredGroups) { group in
-                            IgnoredDuplicateGroupCard(group: group) {
+    // MARK: - Ignored Groups Content
+    @ViewBuilder
+    private var ignoredGroupsContent: some View {
+        if ignoredItemsManager.ignoredGroups.isEmpty {
+            EmptyStateView.noIgnoredGroups()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ScrollView {
+                LazyVStack(spacing: AppSpacing.medium) {
+                    ForEach(ignoredItemsManager.ignoredGroups) { group in
+                        DuplicateGroupCard(
+                            group: group,
+                            state: .ignored,
+                            onAction: {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     ignoredItemsManager.restoreGroup(group)
                                 }
                             }
-                        }
+                        )
                     }
-                    .padding(.horizontal)
-                    .padding(.top, AppSpacing.medium)
-                    .padding(.bottom, AppSpacing.large)
                 }
+                .padding(.horizontal)
+                .padding(.top, AppSpacing.medium)
+                .padding(.bottom, AppSpacing.large)
             }
         }
     }
     
-    private func emptyTabView(icon: String, message: String) -> some View {
-        VStack {
-            Spacer()
-            
-            VStack(spacing: AppSpacing.large) {
-                Image(systemName: icon)
-                    .font(.system(size: 40))
-                    .foregroundColor(Color.designTextTertiary)
-                
-                Text(message)
-                    .font(AppFont.subheadline)
-                    .foregroundColor(Color.designTextSecondary)
-            }
-            
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-    
+    // MARK: - Helper Methods
     private func performClearAll() {
         withAnimation(.easeInOut(duration: 0.3)) {
             switch clearAllType {
@@ -303,149 +236,5 @@ struct IgnoredItemsSettingsView: View {
                 ignoredItemsManager.clearAll()
             }
         }
-    }
-}
-
-// MARK: - Supporting Views
-
-struct IgnoredSongCard: View {
-    let songDetail: IgnoredItemsManager.IgnoredSongDetail
-    let onRestoreSong: (MPMediaEntityPersistentID) -> Void
-    
-    var body: some View {
-        AppCard {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(songDetail.songTitle)
-                        .font(AppFont.headline)
-                        .foregroundColor(Color.designTextPrimary)
-                        .lineLimit(1)
-                    
-                    Text(songDetail.artistName)
-                        .font(AppFont.subheadline)
-                        .foregroundColor(Color.designTextSecondary)
-                        .lineLimit(1)
-                    
-                    Text(songDetail.albumTitle)
-                        .font(AppFont.caption)
-                        .foregroundColor(Color.designTextTertiary)
-                        .lineLimit(1)
-                    
-                    Text("Ignored \(formatIgnoredDate(songDetail.ignoredDate))")
-                        .font(AppFont.caption)
-                        .foregroundColor(Color.designTextTertiary)
-                }
-                
-                Spacer()
-                
-                Button("Restore") {
-                    onRestoreSong(songDetail.songId)
-                }
-                .font(AppFont.subheadline)
-                .foregroundColor(Color.designPrimary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                        .stroke(Color.designPrimary, lineWidth: 1)
-                )
-            }
-        }
-    }
-    
-    private func formatIgnoredDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
-    }
-}
-
-// MARK: - Simplified Ignored Duplicate Group Card
-struct IgnoredDuplicateGroupCard: View {
-    let group: ScanViewModel.DuplicateGroup
-    let onRestore: () -> Void
-    
-    var body: some View {
-        AppCard {
-            VStack(spacing: AppSpacing.medium) {
-                // Header with group info
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(group.title)
-                            .font(AppFont.headline)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color.designTextPrimary)
-                            .lineLimit(2)
-                        
-                        Text(group.artist)
-                            .font(AppFont.subheadline)
-                            .foregroundColor(Color.designTextSecondary)
-                            .lineLimit(1)
-                        
-                        Text("\(group.songs.count) versions")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designInfo)
-                    }
-                    
-                    Spacer()
-                    
-                    // Status indicator
-                    VStack(spacing: 4) {
-                        Image(systemName: "eye.slash.fill")
-                            .font(AppFont.iconMedium)
-                            .foregroundColor(Color.designWarning)
-                        
-                        Text("Ignored")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designWarning)
-                    }
-                }
-                
-                // Album info
-                let albums = Array(Set(group.songs.compactMap { $0.albumTitle })).sorted()
-                let displayAlbums = albums.prefix(2)
-                let albumText = albums.count <= 2 ?
-                    displayAlbums.joined(separator: ", ") :
-                    displayAlbums.joined(separator: ", ") + " + \(albums.count - 2) more"
-                
-                HStack {
-                    Text("Albums: \(albumText)")
-                        .font(AppFont.caption)
-                        .foregroundColor(Color.designTextTertiary)
-                        .lineLimit(2)
-                    
-                    Spacer()
-                }
-                
-                // Restore button
-                Divider()
-                    .background(Color.designTextTertiary)
-                
-                HStack {
-                    Text("This group is hidden from Smart Scans")
-                        .font(AppFont.caption)
-                        .foregroundColor(Color.designTextSecondary)
-                    
-                    Spacer()
-                    
-                    Button("Restore Group") {
-                        onRestore()
-                    }
-                    .font(AppFont.subheadline)
-                    .foregroundColor(Color.designSecondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                            .stroke(Color.designSecondary, lineWidth: 1)
-                    )
-                }
-            }
-        }
-        .overlay(
-            // Add a subtle border to indicate it's ignored
-            RoundedRectangle(cornerRadius: AppCornerRadius.medium)
-                .stroke(Color.designWarning.opacity(0.3), lineWidth: 1)
-        )
     }
 }

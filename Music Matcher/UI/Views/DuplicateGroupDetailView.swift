@@ -17,18 +17,24 @@ struct DuplicateGroupDetailView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
+            FixedActionButtonsContainer(
+                buttons: ActionButtonGroup.musicMatcherActions(
+                    canPerformActions: canPerformActions,
+                    onMatch: { matchPlayCount() },
+                    onAdd: { addPlayCount() }
+                )
+            ) {
                 ScrollView {
                     VStack(spacing: AppSpacing.large) {
                         // Song Header
-                        songHeaderSection
+                        groupHeaderCard
                         
                         // Versions List
-                        versionsSection
+                        versionsCard
                         
                         // Selected Tracks Summary
                         if selectedSourceTrack != nil || selectedTargetTrack != nil {
-                            selectedTracksSection
+                            selectionSummaryCard
                         }
                         
                         // Bottom spacing for actions
@@ -36,9 +42,6 @@ struct DuplicateGroupDetailView: View {
                     }
                     .padding(.horizontal)
                 }
-                
-                // Action Buttons (fixed at bottom)
-                actionButtonsSection
             }
             .background(Color.designBackground)
             .navigationTitle("Duplicate Versions")
@@ -98,15 +101,18 @@ struct DuplicateGroupDetailView: View {
         }
     }
     
-    private var songHeaderSection: some View {
+    // MARK: - Group Header Card
+    private var groupHeaderCard: some View {
         AppCard {
             VStack(spacing: AppSpacing.medium) {
                 // Album artwork from highest play count version
                 if let artwork = group.sourceCandidate?.artwork {
-                    ArtworkView(artwork: artwork)
-                        .frame(width: 100, height: 100)
-                        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.medium))
-                        .appShadow(.light)
+                    ArtworkView(
+                        artwork: artwork,
+                        size: 100,
+                        cornerRadius: AppCornerRadius.medium
+                    )
+                    .appShadow(.light)
                 } else {
                     RoundedRectangle(cornerRadius: AppCornerRadius.medium)
                         .fill(Color.designBackgroundTertiary)
@@ -136,64 +142,71 @@ struct DuplicateGroupDetailView: View {
                 }
                 
                 if group.hasPlayCountDifferences {
-                    Divider()
-                        .background(Color.designTextTertiary)
-                    
-                    HStack {
-                        VStack(spacing: 4) {
-                            Text("Lowest")
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designTextSecondary)
-                            Text("\(group.minPlayCount)")
-                                .font(AppFont.headline)
-                                .foregroundColor(Color.designError)
-                        }
-                        
-                        Spacer()
-                        
-                        VStack(spacing: 4) {
-                            Text("Highest")
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designTextSecondary)
-                            Text("\(group.maxPlayCount)")
-                                .font(AppFont.headline)
-                                .foregroundColor(Color.designSuccess)
-                        }
-                        
-                        Spacer()
-                        
-                        VStack(spacing: 4) {
-                            Text("Difference")
-                                .font(AppFont.caption)
-                                .foregroundColor(Color.designTextSecondary)
-                            Text("\(group.maxPlayCount - group.minPlayCount)")
-                                .font(AppFont.headline)
-                                .foregroundColor(Color.designPrimary)
-                        }
-                    }
+                    playCountSummary
                 }
             }
         }
     }
     
-    private var versionsSection: some View {
+    // MARK: - Play Count Summary
+    private var playCountSummary: some View {
+        VStack(spacing: AppSpacing.small) {
+            Divider()
+                .background(Color.designTextTertiary)
+            
+            HStack {
+                VStack(spacing: 4) {
+                    Text("Lowest")
+                        .font(AppFont.caption)
+                        .foregroundColor(Color.designTextSecondary)
+                    Text("\(group.minPlayCount)")
+                        .font(AppFont.headline)
+                        .foregroundColor(Color.designError)
+                }
+                
+                Spacer()
+                
+                VStack(spacing: 4) {
+                    Text("Highest")
+                        .font(AppFont.caption)
+                        .foregroundColor(Color.designTextSecondary)
+                    Text("\(group.maxPlayCount)")
+                        .font(AppFont.headline)
+                        .foregroundColor(Color.designSuccess)
+                }
+                
+                Spacer()
+                
+                VStack(spacing: 4) {
+                    Text("Difference")
+                        .font(AppFont.caption)
+                        .foregroundColor(Color.designTextSecondary)
+                    Text("\(group.maxPlayCount - group.minPlayCount)")
+                        .font(AppFont.headline)
+                        .foregroundColor(Color.designPrimary)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Versions Card
+    private var versionsCard: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
                 AppSectionHeader("All Versions", subtitle: "Tap to select source and target tracks")
                 
                 VStack(spacing: AppSpacing.small) {
                     ForEach(group.songs, id: \.persistentID) { song in
-                        DuplicateVersionRow(
+                        SongDetailRow(
                             song: song,
-                            isSource: selectedSourceTrack?.persistentID == song.persistentID,
-                            isTarget: selectedTargetTrack?.persistentID == song.persistentID,
-                            onSelectAsSource: {
-                                selectAsSource(song)
+                            mode: .version,
+                            action: selectedAction(for: song),
+                            isSelected: isSelected(song),
+                            showPlayCount: true,
+                            onAction: {
+                                handleSongSelection(song)
                             },
-                            onSelectAsTarget: {
-                                selectAsTarget(song)
-                            },
-                            onRemove: {
+                            onSecondaryAction: {
                                 songToRemove = song
                                 showingRemoveConfirmation = true
                             }
@@ -204,52 +217,27 @@ struct DuplicateGroupDetailView: View {
         }
     }
     
+    // MARK: - Selection Summary Card
     @ViewBuilder
-    private var selectedTracksSection: some View {
+    private var selectionSummaryCard: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
                 AppSectionHeader("Selection Summary")
                 
                 if let sourceTrack = selectedSourceTrack {
-                    VStack(alignment: .leading, spacing: AppSpacing.small) {
-                        Text("Source (copy from):")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                        
-                        HStack {
-                            Text(sourceTrack.albumTitle ?? "Unknown Album")
-                                .font(AppFont.subheadline)
-                                .foregroundColor(Color.designTextPrimary)
-                            
-                            Spacer()
-                            
-                            Text("\(sourceTrack.playCount) plays")
-                                .font(AppFont.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(Color.designPrimary)
-                        }
-                    }
+                    selectionRow(
+                        title: "Source (copy from):",
+                        track: sourceTrack,
+                        color: Color.designPrimary
+                    )
                 }
                 
                 if let targetTrack = selectedTargetTrack {
-                    VStack(alignment: .leading, spacing: AppSpacing.small) {
-                        Text("Target (copy to):")
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextSecondary)
-                        
-                        HStack {
-                            Text(targetTrack.albumTitle ?? "Unknown Album")
-                                .font(AppFont.subheadline)
-                                .foregroundColor(Color.designTextPrimary)
-                            
-                            Spacer()
-                            
-                            Text("\(targetTrack.playCount) plays")
-                                .font(AppFont.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(Color.designSecondary)
-                        }
-                    }
+                    selectionRow(
+                        title: "Target (copy to):",
+                        track: targetTrack,
+                        color: Color.designSecondary
+                    )
                 }
                 
                 if let sourceTrack = selectedSourceTrack,
@@ -285,32 +273,29 @@ struct DuplicateGroupDetailView: View {
         }
     }
     
-    private var actionButtonsSection: some View {
-        VStack(spacing: AppSpacing.small) {
-            HStack(spacing: AppSpacing.medium) {
-                AppPrimaryButton(
-                    "Match",
-                    isEnabled: canPerformActions
-                ) {
-                    matchPlayCount()
-                }
+    // MARK: - Selection Row
+    private func selectionRow(title: String, track: MPMediaItem, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.small) {
+            Text(title)
+                .font(AppFont.caption)
+                .foregroundColor(Color.designTextSecondary)
+            
+            HStack {
+                Text(track.albumTitle ?? "Unknown Album")
+                    .font(AppFont.subheadline)
+                    .foregroundColor(Color.designTextPrimary)
                 
-                AppSecondaryButton(
-                    "Add",
-                    isEnabled: canPerformActions
-                ) {
-                    addPlayCount()
-                }
+                Spacer()
+                
+                Text("\(track.playCount) plays")
+                    .font(AppFont.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(color)
             }
-            .padding(.horizontal)
         }
-        .padding(.bottom, AppSpacing.medium)
-        .background(
-            Color.designBackground
-                .ignoresSafeArea(edges: .bottom)
-        )
     }
     
+    // MARK: - Computed Properties
     private var canPerformActions: Bool {
         guard let sourceTrack = selectedSourceTrack,
               let targetTrack = selectedTargetTrack else {
@@ -323,6 +308,36 @@ struct DuplicateGroupDetailView: View {
     }
     
     // MARK: - Selection Logic
+    
+    private func selectedAction(for song: MPMediaItem) -> SongDetailRow.ActionType {
+        if selectedSourceTrack?.persistentID == song.persistentID {
+            return .selectAsSource
+        } else if selectedTargetTrack?.persistentID == song.persistentID {
+            return .selectAsTarget
+        } else if selectedSourceTrack == nil {
+            return .selectAsSource
+        } else {
+            return .selectAsTarget
+        }
+    }
+    
+    private func isSelected(_ song: MPMediaItem) -> Bool {
+        return selectedSourceTrack?.persistentID == song.persistentID ||
+               selectedTargetTrack?.persistentID == song.persistentID
+    }
+    
+    private func handleSongSelection(_ song: MPMediaItem) {
+        let currentAction = selectedAction(for: song)
+        
+        switch currentAction {
+        case .selectAsSource:
+            selectAsSource(song)
+        case .selectAsTarget:
+            selectAsTarget(song)
+        default:
+            break
+        }
+    }
     
     private func selectAsSource(_ song: MPMediaItem) {
         if selectedSourceTrack?.persistentID == song.persistentID {
@@ -402,141 +417,6 @@ struct DuplicateGroupDetailView: View {
         
         // Start adding
         musicMatcherViewModel.startAdding()
-    }
-}
-
-// MARK: - Duplicate Version Row Component (unchanged)
-struct DuplicateVersionRow: View {
-    let song: MPMediaItem
-    let isSource: Bool
-    let isTarget: Bool
-    let onSelectAsSource: () -> Void
-    let onSelectAsTarget: () -> Void
-    let onRemove: () -> Void
-    
-    var body: some View {
-        VStack(spacing: AppSpacing.small) {
-            HStack {
-                // Album info
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(song.albumTitle ?? "Unknown Album")
-                        .font(AppFont.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(Color.designTextPrimary)
-                        .lineLimit(1)
-                    
-                    if let releaseDate = song.releaseDate {
-                        Text(DateFormatter.year.string(from: releaseDate))
-                            .font(AppFont.caption)
-                            .foregroundColor(Color.designTextTertiary)
-                    }
-                }
-                
-                Spacer()
-                
-                // Play count
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(song.playCount)")
-                        .font(AppFont.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(playCountColor)
-                    
-                    Text("plays")
-                        .font(AppFont.caption)
-                        .foregroundColor(Color.designTextSecondary)
-                }
-                
-                // Remove button
-                Button(action: onRemove) {
-                    Image(systemName: "trash")
-                        .font(AppFont.iconSmall)
-                        .foregroundColor(Color.designError)
-                        .padding(AppSpacing.xs)
-                        .background(
-                            Circle()
-                                .fill(Color.designError.opacity(0.1))
-                        )
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            
-            // Selection buttons
-            HStack(spacing: AppSpacing.small) {
-                Button(action: onSelectAsSource) {
-                    HStack(spacing: 4) {
-                        Image(systemName: isSource ? "checkmark.circle.fill" : "circle")
-                            .font(AppFont.iconSmall)
-                        Text("Source")
-                            .font(AppFont.caption)
-                    }
-                    .foregroundColor(isSource ? Color.designPrimary : Color.designTextSecondary)
-                    .padding(.horizontal, AppSpacing.small)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                            .fill(isSource ? Color.designPrimary.opacity(0.2) : Color.clear)
-                            .stroke(isSource ? Color.designPrimary : Color.designTextTertiary, lineWidth: 1)
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-                
-                Button(action: onSelectAsTarget) {
-                    HStack(spacing: 4) {
-                        Image(systemName: isTarget ? "checkmark.circle.fill" : "circle")
-                            .font(AppFont.iconSmall)
-                        Text("Target")
-                            .font(AppFont.caption)
-                    }
-                    .foregroundColor(isTarget ? Color.designSecondary : Color.designTextSecondary)
-                    .padding(.horizontal, AppSpacing.small)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                            .fill(isTarget ? Color.designSecondary.opacity(0.2) : Color.clear)
-                            .stroke(isTarget ? Color.designSecondary : Color.designTextTertiary, lineWidth: 1)
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-                
-                Spacer()
-            }
-        }
-        .padding(AppSpacing.small)
-        .background(
-            RoundedRectangle(cornerRadius: AppCornerRadius.small)
-                .fill(backgroundColor)
-                .stroke(borderColor, lineWidth: 1)
-        )
-    }
-    
-    private var playCountColor: Color {
-        if isSource {
-            return Color.designPrimary
-        } else if isTarget {
-            return Color.designSecondary
-        } else {
-            return Color.designTextPrimary
-        }
-    }
-    
-    private var backgroundColor: Color {
-        if isSource {
-            return Color.designPrimary.opacity(0.1)
-        } else if isTarget {
-            return Color.designSecondary.opacity(0.1)
-        } else {
-            return Color.designBackgroundTertiary
-        }
-    }
-    
-    private var borderColor: Color {
-        if isSource {
-            return Color.designPrimary.opacity(0.3)
-        } else if isTarget {
-            return Color.designSecondary.opacity(0.3)
-        } else {
-            return Color.designTextTertiary.opacity(0.3)
-        }
     }
 }
 

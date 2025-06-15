@@ -119,6 +119,8 @@ enum AppSpacing {
 
 // MARK: - Corner Radius System
 enum AppCornerRadius {
+    /// Extra small radius for very small elements
+    static let xs: CGFloat = 4
     /// Small radius for buttons and small elements
     static let small: CGFloat = 8
     /// Medium radius for cards and inputs
